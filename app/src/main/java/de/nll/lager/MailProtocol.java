@@ -29,7 +29,11 @@ final class MailProtocol {
     static void attachments(JSONObject payload,List<JSONObject> out) throws JSONException {attachments(payload,out,0);}
     private static void attachments(JSONObject payload,List<JSONObject> out,int depth) throws JSONException {
         if(depth>12) throw new JSONException("Mail zu stark verschachtelt.");
-        if(!payload.optString("filename").isEmpty()) out.add(payload);
+        String filename=payload.optString("filename").toLowerCase(Locale.ROOT);
+        // Corporate signatures may add inline or attached images. Never fetch them;
+        // Excel filenames must still count even if their MIME type is mislabelled.
+        boolean signatureImage=payload.optString("mimeType").toLowerCase(Locale.ROOT).startsWith("image/") && !filename.endsWith(".xlsx");
+        if(!filename.isEmpty() && !signatureImage) out.add(payload);
         JSONArray parts=payload.optJSONArray("parts");
         if(parts!=null) for(int i=0;i<parts.length();i++) attachments(parts.getJSONObject(i),out,depth+1);
     }

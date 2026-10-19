@@ -61,7 +61,7 @@ final class MailSync {
         try {
             if(command.startsWith("IMPORT")) {
                 List<JSONObject> parts=new ArrayList<>();MailProtocol.attachments(payload,parts);
-                if(parts.size()!=1 || !parts.get(0).optString("filename").toLowerCase(Locale.ROOT).endsWith(".xlsx")) throw new IOException("Genau einen .xlsx-Anhang senden. Keine weiteren Anhänge.");
+                if(parts.size()!=1 || !parts.get(0).optString("filename").toLowerCase(Locale.ROOT).endsWith(".xlsx")) throw new IOException("Genau einen .xlsx-Anhang senden. Signaturbilder werden ignoriert; andere zusätzliche Dateien sind nicht erlaubt.");
                 File temp=File.createTempFile("mail-import-",".xlsx",context.getCacheDir());
                 try {
                     try(OutputStream out=new FileOutputStream(temp)) {out.write(client.attachment(id,parts.get(0)));}

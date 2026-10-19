@@ -253,7 +253,7 @@ public class MainActivity extends Activity {
             button("Export jetzt per Mail senden",false,() -> localMailExport(config));
         }
         if(!config.secret.isEmpty()) {
-            text("Mailbefehle nur vom hinterlegten Firmenpostfach, Betreff exakt wie unten. Den Auftragsschlüssel vertraulich behandeln. Für einen Import genau eine Excel-Datei anhängen.",16,MUTED);
+            text("Mailbefehle nur vom hinterlegten Firmenpostfach, Betreff exakt wie unten. Den Auftragsschlüssel vertraulich behandeln. Für einen Import genau eine Excel-Datei anhängen. Signaturbilder werden ignoriert; andere zusätzliche Dateien sind nicht erlaubt.",16,MUTED);
             text("NLL "+config.secret+" IMPORT MATERIAL\n\nNLL "+config.secret+" IMPORT PERSONEN\n\nNLL "+config.secret+" EXPORT",15,INK).setTextIsSelectable(true);
         }
         if(config.connected) button("Automatischen Mailzugriff deaktivieren",false,() -> {

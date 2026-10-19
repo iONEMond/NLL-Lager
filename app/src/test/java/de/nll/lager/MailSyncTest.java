@@ -34,14 +34,14 @@ public class MailSyncTest {
         store.book(store.material("001"),"A","B",qty,store.person("007"));
     }
     static class FakeClient extends GmailClient {
-        List<JSONObject> messages=new ArrayList<>();List<String> sent=new ArrayList<>();boolean fail;byte[] xlsx;
+        List<JSONObject> messages=new ArrayList<>();List<String> sent=new ArrayList<>();List<String> fetched=new ArrayList<>();boolean fail;byte[] xlsx;
         FakeClient() {super("unused");}
         @Override JSONObject call(String path,JSONObject payload) throws Exception {
             JSONArray ids=new JSONArray();for(JSONObject m:messages) ids.put(new JSONObject().put("id",m.getString("id")));
             return new JSONObject().put("messages",ids);
         }
         @Override JSONObject message(String id) throws Exception {for(JSONObject m:messages) if(id.equals(m.getString("id"))) return m;throw new IOException();}
-        @Override byte[] attachment(String id,JSONObject part) {return xlsx;}
+        @Override byte[] attachment(String id,JSONObject part) {fetched.add(part.optString("filename"));return xlsx;}
         @Override void send(String mime) throws Exception {sent.add(mime);if(fail) throw new IOException("connection lost after acceptance");}
     }
     @Test public void commandRequiresSecretExactGrammarAndSingleHeaders() throws Exception {
@@ -99,6 +99,37 @@ public class MailSyncTest {
         JSONObject m=message("bad",config.recipient,subject("IMPORT PERSONEN"));
         m.getJSONObject("payload").put("parts",new JSONArray().put(new JSONObject().put("filename","personen.xlsx").put("body",new JSONObject())));
         client.messages.add(m);MailSync.sync(context,config,store,client);assertEquals(1,store.people().size());assertTrue(mail.records(config.gmail).get(0)[2].contains("abgelehnt"));assertEquals(1,client.sent.size());
+    }
+    @Test public void nestedSignatureImagesAreIgnoredWithoutDownloadingAndImportIsIdempotent() throws Exception {
+        FakeClient client=new FakeClient();
+        try(InputStream in=getClass().getResourceAsStream("/Personen-Import.xlsx")) {client.xlsx=in.readAllBytes();}
+        JSONObject m=message("signature",config.recipient,subject("IMPORT PERSONEN"));
+        m.getJSONObject("payload").put("parts",new JSONArray()
+            .put(new JSONObject().put("parts",new JSONArray()
+                .put(new JSONObject().put("filename","logo.png").put("mimeType","image/png"))
+                .put(new JSONObject().put("filename","banner.jpg").put("mimeType","image/jpeg"))))
+            .put(new JSONObject().put("filename","personen.xlsx")));
+        client.messages.add(m);MailSync.sync(context,config,store,client);
+        assertTrue(store.people().size()>0);assertEquals(Collections.singletonList("personen.xlsx"),client.fetched);
+        assertTrue(mail.records(config.gmail).get(0)[2].contains("ergänzt"));
+        MailSync.sync(context,config,store,client);assertEquals(1,client.sent.size());assertEquals(1,client.fetched.size());
+    }
+    @Test public void imagesDoNotRelaxExcelCountOrAllowOtherAttachments() throws Exception {
+        for(String extra:Arrays.asList("zweite.xlsx","dokument.pdf","logo.png")) {
+            FakeClient client=new FakeClient();JSONObject m=message(extra,config.recipient,subject("IMPORT PERSONEN"));
+            m.getJSONObject("payload").put("parts",new JSONArray()
+                .put(new JSONObject().put("filename","personen.xlsx"))
+                .put(new JSONObject().put("filename",extra).put("mimeType",extra.endsWith("xlsx") ? "image/png" : "application/octet-stream")));
+            client.messages.add(m);MailSync.sync(context,config,store,client);
+            assertTrue(client.fetched.isEmpty());assertTrue(store.people().isEmpty());
+            assertEquals(1,client.sent.size());
+        }
+    }
+    @Test public void signatureImagesWithoutExcelAreRejected() throws Exception {
+        FakeClient client=new FakeClient();JSONObject m=message("images-only",config.recipient,subject("IMPORT PERSONEN"));
+        m.getJSONObject("payload").put("parts",new JSONArray().put(new JSONObject().put("filename","logo.png").put("mimeType","image/png")));
+        client.messages.add(m);MailSync.sync(context,config,store,client);
+        assertTrue(client.fetched.isEmpty());assertTrue(store.people().isEmpty());assertTrue(mail.records(config.gmail).get(0)[2].contains("abgelehnt"));
     }
     @Test public void versionTwoDatabaseMigratesWithoutLosingMovements() {
         movement("1");store.getWritableDatabase().execSQL("DROP TABLE mail_commands");store.getWritableDatabase().setVersion(2);store.close();

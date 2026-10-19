@@ -1,10 +1,10 @@
 # Gmail-Anbindung – Entwicklungsstand 0.6.0
 
-Noch keine freigegebene Version. Der lokale Entwicklungsbuild heißt 0.6.0-dev (versionCode 7). Google-Login, Gmail-Abruf und Versand eines leeren Excel-Testexports sind im separaten Emulator geprüft; Empfang und Mailimport stehen noch aus. Die veröffentlichte APK 0.5.0 enthält diese Funktionen nicht.
+Noch keine freigegebene Version. Der lokale Entwicklungsbuild heißt 0.6.0-dev (versionCode 7). Google-Login, Gmail-Abruf und Versand eines leeren Excel-Testexports sind im separaten Emulator geprüft; Exportempfang vom Betreiber bestätigt; erfolgreicher Mailimport steht noch aus. Die veröffentlichte APK 0.5.0 enthält diese Funktionen nicht.
 
 ## Einrichtungsstand am 19.10.2026
 
-Gmail API aktiviert; Google-Auth-App NLL Lager eingerichtet. Android-OAuth-Client für das Release-Paket `de.nll.lager` mit dem unten dokumentierten Release-Zertifikat erstellt. Das separate Scanner-Gmail-Konto ist als Testnutzer gespeichert; angeforderte Bereiche `gmail.readonly` und `gmail.send` sind konfiguriert. Status weiterhin Test. Für das Vorschau-Paket ist noch kein eigener OAuth-Client angelegt. Im separaten Emulator NLL Gmail Test sind Google-Kontoanmeldung, Kontofreigabe und ein echter Gmail-Synchronisierungslauf erfolgreich bestätigt (19.10.2026). Ein leerer Excel-Testexport (0 offene Bewegungen) wurde am 19.10.2026 um 22:25 mit Auftragsstatus „Versendet“ bestätigt. Empfang des Excel-Berichts im Firmenpostfach und Mailimport stehen noch aus. Die 0.6.0-dev-Test-APK wurde mit dem Release-Schlüssel gebaut; Paket, Version (7) und APK-v2-Signatur sind geprüft. Sie liegt lokal im Mac-Projektordner als NLL-Lager-0.6.0-dev-release.apk. Kein fertiger 0.6.0-Release. Der nächste Schritt ist die Empfangsbestätigung und ein realer Importtest.
+Gmail API aktiviert; Google-Auth-App NLL Lager eingerichtet. Android-OAuth-Client für das Release-Paket `de.nll.lager` mit dem unten dokumentierten Release-Zertifikat erstellt. Das separate Scanner-Gmail-Konto ist als Testnutzer gespeichert; angeforderte Bereiche `gmail.readonly` und `gmail.send` sind konfiguriert. Status weiterhin Test. Für das Vorschau-Paket ist noch kein eigener OAuth-Client angelegt. Im separaten Emulator NLL Gmail Test sind Google-Kontoanmeldung, Kontofreigabe und ein echter Gmail-Synchronisierungslauf erfolgreich bestätigt (19.10.2026). Ein leerer Excel-Testexport (0 offene Bewegungen) wurde am 19.10.2026 um 22:25 mit Auftragsstatus „Versendet“ bestätigt. Empfang des Excel-Berichts im Firmenpostfach vom Betreiber bestätigt. Erfolgreicher Mailimport steht noch aus. Die 0.6.0-dev-Test-APK wurde mit dem Release-Schlüssel gebaut; Paket, Version (7) und APK-v2-Signatur sind geprüft. Sie liegt lokal im Mac-Projektordner als NLL-Lager-0.6.0-dev-release.apk. Kein fertiger 0.6.0-Release. Der nächste Schritt ist die Empfangsbestätigung und ein realer Importtest.
 
 ## Voraussetzungen
 
@@ -45,7 +45,7 @@ NLL AUFTRAGSSCHLUESSEL EXPORT
 
 ## Import und Export
 
-- Beim Import genau einen `.xlsx`-Anhang senden. Die bisherigen Material-/Personenvorlagen bleiben kompatibel. Maximal 20 MB pro Anhang und 10.000 Datensätze; Formeln und doppelte Codes innerhalb der Datei werden abgelehnt.
+- Beim Import genau einen `.xlsx`-Anhang senden. Zusätzliche Bilder mit MIME-Typ `image/*` (z. B. Firmensignatur) werden ignoriert und nicht heruntergeladen. Andere zusätzliche Dateien und mehrere Excel-Dateien werden abgelehnt. Die bisherigen Material-/Personenvorlagen bleiben kompatibel. Maximal 20 MB pro Anhang und 10.000 Datensätze; Formeln und doppelte Codes innerhalb der Datei werden abgelehnt.
 - Neue Codes werden angelegt, vorhandene Codes aktualisiert. Nicht in der Datei enthaltene Einträge bleiben bestehen. Fehlt die optionale Lagerspalte, bleibt eine bestehende Zuordnung erhalten; eine vorhandene, leere Lagerspalte leert sie bewusst.
 - Der Import erfolgt mit Auftragsprotokoll in einer Datenbanktransaktion. Ein Fehler lässt den bisherigen Katalog erhalten. Frühere Buchungen behalten ihre gespeicherten Artikel-/Personendaten.
 - Der Mailbericht enthält die zum Erstellungszeitpunkt offenen Bewegungen. Spätere Buchungen werden nicht in diesen Bericht oder dessen Abschluss einbezogen. Maximal 12 MB fertige XLSX-Datei für Mailversand.
