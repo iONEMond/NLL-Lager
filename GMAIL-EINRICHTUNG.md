@@ -4,7 +4,7 @@ Noch keine freigegebene Version. Der lokale Entwicklungsbuild heißt 0.6.0-dev (
 
 ## Einrichtungsstand am 19.10.2026
 
-Gmail API aktiviert; Google-Auth-App NLL Lager eingerichtet. Android-OAuth-Client für das Release-Paket `de.nll.lager` mit dem unten dokumentierten Release-Zertifikat erstellt. Das separate Scanner-Gmail-Konto ist als Testnutzer gespeichert; angeforderte Bereiche `gmail.readonly` und `gmail.send` sind konfiguriert. Status weiterhin Test. Für das Vorschau-Paket ist noch kein eigener OAuth-Client angelegt. Echte Anmeldung, Kontofreigabe und Mailaustausch stehen noch aus. Der nächste Test erfolgt mit einer mit dem Release-Schlüssel signierten 0.6.0-dev-APK.
+Gmail API aktiviert; Google-Auth-App NLL Lager eingerichtet. Android-OAuth-Client für das Release-Paket `de.nll.lager` mit dem unten dokumentierten Release-Zertifikat erstellt. Das separate Scanner-Gmail-Konto ist als Testnutzer gespeichert; angeforderte Bereiche `gmail.readonly` und `gmail.send` sind konfiguriert. Status weiterhin Test. Für das Vorschau-Paket ist noch kein eigener OAuth-Client angelegt. Echte Anmeldung, Kontofreigabe und Mailaustausch stehen noch aus. Die 0.6.0-dev-Test-APK wurde mit dem Release-Schlüssel gebaut; Paket, Version (7) und APK-v2-Signatur sind geprüft. Sie liegt lokal im Mac-Projektordner als NLL-Lager-0.6.0-dev-release.apk. Kein fertiger 0.6.0-Release. Der nächste Schritt ist die Google-Anmeldung am Testgerät.
 
 ## Voraussetzungen
 
