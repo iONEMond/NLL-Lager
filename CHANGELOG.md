@@ -10,7 +10,7 @@ Google-Einrichtung am 19.10.2026: Gmail API, Release-OAuth-Client, Scanner-Testn
 
 Korrektur für Firmensignaturen: Zusätzliche Bilder werden beim Mailimport ignoriert und nicht heruntergeladen. Genau eine XLSX-Datei bleibt erforderlich; weitere Nicht-Bild-Dateien werden abgelehnt. Drei zusätzliche Tests für verschachtelte Signaturbilder, Mehrfach-/Fremdanhänge und fehlende Excel-Datei. Korrigierte Test-APK mit bestehendem Release-Schlüssel signiert und Signatur geprüft; erneuter echter Materialimport mit Firmensignatur erfolgreich (1 ergänzt, 0 aktualisiert), Rückmeldung versendet.
 
-Vereinfachte Mailbefehle auf Betreiberwunsch: `NLL Material`, `NLL Personen`, `NLL Export`, ohne Auftragsschlüssel. Ausschließlich die hinterlegte Firmenabsenderadresse wird zugelassen. Groß-/Kleinschreibung und äußere Leerzeichen sind egal, Antwortpräfixe und andere Zusätze bleiben ungültig. Vorhandene Kontofreigabe und Abrufbeginn bleiben erhalten. 57 Tests, Build und Lint erfolgreich; signierter Testbuild mit dieser Änderung noch ausstehend.
+Vereinfachte Mailbefehle auf Betreiberwunsch: `NLL Material`, `NLL Personen`, `NLL Export`, ohne Auftragsschlüssel. Ausschließlich die hinterlegte Firmenabsenderadresse wird zugelassen. Groß-/Kleinschreibung und äußere Leerzeichen sind egal, Antwortpräfixe und andere Zusätze bleiben ungültig. Vorhandene Kontofreigabe und Abrufbeginn bleiben erhalten. 57 Tests, Build und Lint erfolgreich; signierter Testbuild mit dieser Änderung erstellt und mit bestehendem Zertifikat geprüft; echter Mailtest mit kurzen Betreffzeilen noch ausstehend.
 
 Feature-Update für genau einen Scanner im privaten Android-Profil, ohne Kommunikation mit dem Arbeitsprofil.
 
