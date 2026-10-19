@@ -1,4 +1,12 @@
-# Validierung – NLL Lager 0.4.1 Vorschau
+# Validierung – NLL Lager 0.5.0
+
+Stand: 19.10.2026. Versionsfreigabe ohne Änderungen an der App-Logik gegenüber 0.4.1.
+
+- Release-Build und `:app:lintRelease` erfolgreich.
+- Signierte APK mit apksigner erfolgreich verifiziert (v2); Zertifikat SHA-256: `1d70da7786708b6dcd04319235fc76ca4d411f12474a63bc98852fc9b5fa25c0`.
+- Zielversion 0.5.0 (versionCode 6), Paket `de.nll.lager`, Mindest-API 26, Ziel-/Compile-API 35.
+
+## Funktionsprüfung des unveränderten Stands 0.4.1
 
 Stand: 19.10.2026, lokaler Apple-Silicon-Mac.
 

@@ -1,12 +1,16 @@
-# NLL Lager – Android 0.4.1 Vorschau
+# NLL Lager – Android 0.5.0
 
 Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen scannen und lokal speichern. Helle Oberfläche mit blauen Akzenten, große Schaltflächen und getrennte Artikelbereiche.
 
 ## Download
 
-**[NLL Lager 0.4.1 – Test-APK](downloads/NLL-Lager-0.4.1-vorschau.apk)** – auf GitHub „Download raw file“ wählen. [SHA-256-Prüfsummen](downloads/SHA256SUMS).
+**[NLL Lager 0.5.0 – signierte APK](downloads/NLL-Lager-0.5.0-release.apk)** – auf GitHub „Download raw file“ wählen. [SHA-256-Prüfsummen](downloads/SHA256SUMS).
 
-Die Vorschau heißt **NLL Lager · Vorschau** und verwendet `de.nll.lager.preview`. Sie wird separat von Version 0.1.0 installiert. Updates von 0.2.0, 0.3.0 und 0.4.0 erhalten die Daten der Vorschau. APK mit Entwicklungsschlüssel; für Produktivverteilung ist eine dauerhaft gesicherte Release-Signierung vorgesehen. Hardwaretest auf dem Honeywell steht noch aus.
+Erste mit dem dauerhaften Release-Schlüssel signierte Testversion, `versionCode 6`, Paket `de.nll.lager`, App-Name **NLL Lager**. Hardwaretest auf dem Honeywell steht noch aus. Weitere Updates verwenden denselben Schlüssel und einen höheren versionCode.
+
+Die bisherige [Vorschau 0.4.1](downloads/NLL-Lager-0.4.1-vorschau.apk) verwendet `de.nll.lager.preview`. Die Release-App wird separat installiert; Vorschau-Daten werden nicht automatisch übernommen. Eine vorhandene Version 0.1.0 mit gleichem Paketnamen und anderem Schlüssel lässt sich nicht direkt aktualisieren; vor einem Wechsel Daten exportieren.
+
+Der private Signierschlüssel und Passwörter bleiben lokal und gehören nicht ins Repository.
 
 ## Bedienung
 
