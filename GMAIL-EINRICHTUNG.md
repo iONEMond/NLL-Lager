@@ -2,6 +2,10 @@
 
 Noch keine freigegebene Version. Der lokale Entwicklungsbuild heißt 0.6.0-dev (versionCode 7). Ein echter Google-Login und Mailaustausch müssen nach Einrichtung des Postfachs geprüft werden. Die veröffentlichte APK 0.5.0 enthält diese Funktionen nicht.
 
+## Einrichtungsstand am 19.10.2026
+
+Gmail API aktiviert; Google-Auth-App NLL Lager eingerichtet. Android-OAuth-Client für das Release-Paket `de.nll.lager` mit dem unten dokumentierten Release-Zertifikat erstellt. Das separate Scanner-Gmail-Konto ist als Testnutzer gespeichert; angeforderte Bereiche `gmail.readonly` und `gmail.send` sind konfiguriert. Status weiterhin Test. Für das Vorschau-Paket ist noch kein eigener OAuth-Client angelegt. Echte Anmeldung, Kontofreigabe und Mailaustausch stehen noch aus. Der nächste Test erfolgt mit einer mit dem Release-Schlüssel signierten 0.6.0-dev-APK.
+
 ## Voraussetzungen
 
 - Ein separates Gmail-Konto für genau diesen Scanner. Keine Gmail-App erforderlich.

@@ -6,6 +6,8 @@ Neueste veröffentlichte APK: **0.5.0**. Geplante Funktionen sind ausdrücklich 
 
 Lokaler Build: 0.6.0-dev, versionCode 7. Die Mail-Anbindung ist implementiert und lokal mit 53 Tests sowie Build und Lint geprüft; echter OAuth-/Mailtest steht mangels eingerichteten Postfachs aus. [Einrichtung und Betriebsablauf](GMAIL-EINRICHTUNG.md). Kein Release-APK-Upload für diesen Entwicklungsstand.
 
+Google-Einrichtung am 19.10.2026: Gmail API, Release-OAuth-Client, Scanner-Testnutzer und Lese-/Sendebereiche konfiguriert. Echte Kontofreigabe und Mailtest weiterhin offen.
+
 Feature-Update für genau einen Scanner im privaten Android-Profil, ohne Kommunikation mit dem Arbeitsprofil.
 
 - Eigenes Gmail-Postfach direkt in der Lager-App anbinden; Gmail-App und eigener Vermittlungsserver sind nicht erforderlich. Google-API-/OAuth-Einrichtung ist erforderlich.
