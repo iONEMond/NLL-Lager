@@ -1,16 +1,16 @@
-# NLL Lager – Android 0.5.0
+# NLL Lager – Android 0.6.0
 
 Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen scannen und lokal speichern. Helle Oberfläche mit blauen Akzenten, große Schaltflächen und getrennte Artikelbereiche.
 
 [Versionshistorie und geplante Updates](CHANGELOG.md)
 
-**In Entwicklung: 0.6.0-dev – Gmail-Anbindung.** [Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Gmail-Abruf und Versand eines leeren Excel-Testexports im Emulator geprüft. Exportempfang bestätigt; Material-Mailimport mit Firmensignatur erfolgreich; Honeywell-Test steht aus; die veröffentlichte APK unten bleibt 0.5.0.
+**Release 0.6.0 – erster Gerätetest.** [Gmail-Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Excel-Mailversand und Material-Mailimport mit Firmensignatur im Emulator geprüft. Honeywell-Hardwaretest und echte Prüfung der neuen Export-/Neuanlageabläufe stehen noch aus.
 
 ## Download
 
-**[NLL Lager 0.5.0 – signierte APK](downloads/NLL-Lager-0.5.0-release.apk)** – auf GitHub „Download raw file“ wählen. [SHA-256-Prüfsummen](downloads/SHA256SUMS).
+**[NLL Lager 0.6.0 – signierte APK](https://github.com/iONEMond/NLL-Lager/releases/download/v0.6.0/NLL-Lager-0.6.0-release.apk)** – auf GitHub „Download raw file“ wählen. [SHA-256-Prüfsummen](downloads/SHA256SUMS).
 
-Erste mit dem dauerhaften Release-Schlüssel signierte Testversion, `versionCode 6`, Paket `de.nll.lager`, App-Name **NLL Lager**. Hardwaretest auf dem Honeywell steht noch aus. Weitere Updates verwenden denselben Schlüssel und einen höheren versionCode.
+Release für den ersten Gerätetest, `versionCode 8`, Paket `de.nll.lager`, App-Name **NLL Lager**. Hardwaretest auf dem Honeywell steht noch aus. Weitere Updates verwenden denselben Schlüssel und einen höheren versionCode.
 
 Die bisherige [Vorschau 0.4.1](downloads/NLL-Lager-0.4.1-vorschau.apk) verwendet `de.nll.lager.preview`. Die Release-App wird separat installiert; Vorschau-Daten werden nicht automatisch übernommen. Eine vorhandene Version 0.1.0 mit gleichem Paketnamen und anderem Schlüssel lässt sich nicht direkt aktualisieren; vor einem Wechsel Daten exportieren.
 
@@ -43,7 +43,7 @@ Nur echte `.xlsx`, erste Tabelle, erste nichtleere Zeile als Überschrift; Spalt
 
 **Codes und Lagernummern vor der Eingabe in Excel als Text formatieren**, damit führende Nullen erhalten bleiben.
 
-Mailbefehle im Entwicklungsstand: **NLL Material**, **NLL Personen**, **NLL Export**. Kein Auftragsschlüssel erforderlich; nur die hinterlegte Firmenabsenderadresse wird zugelassen. Genau eine XLSX-Datei pro Import, Signaturbilder werden ignoriert.
+Mailbefehle: **NLL Material**, **NLL Personen**, **NLL Export**. Kein Auftragsschlüssel erforderlich; nur die hinterlegte Firmenabsenderadresse wird zugelassen. Genau eine XLSX-Datei pro Import, Signaturbilder werden ignoriert.
 
 ## Export und Daten
 
@@ -53,7 +53,7 @@ XLSX: Blatt Warenbewegungen mit Kopfzeile, Filter und fixierter erster Zeile. Me
 
 CSV: UTF-8 mit BOM, Semikolon, Dezimalkomma, vollständig zitierte und gegen Excel-Formelausführung geschützte Textfelder. In Excel Codes als Text importieren.
 
-In der veröffentlichten 0.5.0 bleiben SQLite-Daten lokal und die App hat keine Internetberechtigung. Der Entwicklungsstand 0.6.0-dev ergänzt Internetzugriff für Gmail und übermittelt bei aktivierter Einrichtung Berichte und Rückmeldungen an das konfigurierte Firmenpostfach. Eine Deinstallation oder „App-Daten löschen“ entfernt auch das Archiv. Berichte außerhalb der App sichern. Ein Prozessabbruch zwischen Dateischreiben und Archivierung kann offene Bewegungen zurücklassen; Bewegungs-IDs helfen beim Erkennen doppelter Exporte. Personenanmeldung per Code dient der Zuordnung. Das Einstellungspasswort schützt die Bedienfunktionen der App.
+In der veröffentlichten 0.5.0 bleiben SQLite-Daten lokal und die App hat keine Internetberechtigung. Version 0.6.0 ergänzt Internetzugriff für Gmail und übermittelt bei aktivierter Einrichtung Berichte und Rückmeldungen an das konfigurierte Firmenpostfach. Eine Deinstallation oder „App-Daten löschen“ entfernt auch das Archiv. Berichte außerhalb der App sichern. Ein Prozessabbruch zwischen Dateischreiben und Archivierung kann offene Bewegungen zurücklassen; Bewegungs-IDs helfen beim Erkennen doppelter Exporte. Personenanmeldung per Code dient der Zuordnung. Das Einstellungspasswort schützt die Bedienfunktionen der App.
 
 Materiallager ist eine Stammdatenzuordnung. Es gibt weiterhin keine Bestandsberechnung, Werkzeuge oder Nachbestellungen. Kältemittel verwenden eine Menge mit Einheit; getrennte Flaschen-/kg-Erfassung ist noch nicht umgesetzt.
 

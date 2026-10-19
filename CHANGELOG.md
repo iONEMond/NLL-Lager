@@ -1,10 +1,10 @@
 # Versionshistorie
 
-Neueste veröffentlichte APK: **0.5.0**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
+Neueste veröffentlichte APK: **0.6.0**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
-## 0.6.0 – in Entwicklung, nicht veröffentlicht
+## 0.6.0 – 19.10.2026 · erster Gerätetest
 
-Lokaler Build: 0.6.0-dev, versionCode 7. Die Mail-Anbindung ist implementiert und lokal mit 64 Tests sowie Build und Lint geprüft; echte Google-Freigabe, Gmail-Abruf und ein leerer Excel-Testexport sind im separaten Emulator geprüft. [Einrichtung und Betriebsablauf](GMAIL-EINRICHTUNG.md). Kein Release-APK-Upload für diesen Entwicklungsstand.
+Release: 0.6.0, versionCode 8, Paket `de.nll.lager`. Die Mail-Anbindung ist implementiert und lokal mit 64 Tests sowie Build und Lint geprüft; echte Google-Freigabe, Gmail-Abruf und ein leerer Excel-Testexport sind im separaten Emulator geprüft. [Einrichtung und Betriebsablauf](GMAIL-EINRICHTUNG.md). [Signierte APK und Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.0), [SHA-256-Prüfsummen](downloads/SHA256SUMS). Bestehender Release-Schlüssel; Update von 0.5.0 möglich. Hardwaretest noch offen.
 
 Google-Einrichtung am 19.10.2026: Gmail API, Release-OAuth-Client, Scanner-Testnutzer und Lese-/Sendebereiche konfiguriert. Signierte 0.6.0-dev-Test-APK lokal erstellt und Signatur geprüft. Echte Google-Kontofreigabe und Gmail-Synchronisierung im separaten Emulator erfolgreich. Leerer Excel-Testexport am 19.10.2026 mit Auftragsstatus „Versendet“ bestätigt (0 offene Bewegungen). Empfang des Excel-Berichts vom Betreiber bestätigt. Erster echter Importauftrag wegen zusätzlicher Signaturbilder abgelehnt; Fehlerantwort versendet. Erneuter Material-Mailimport mit Firmensignatur erfolgreich: 1 ergänzt, 0 aktualisiert; Rückmeldung mit Status „Versendet“. Honeywell-Test weiterhin offen.
 
@@ -24,7 +24,7 @@ Feature-Update für genau einen Scanner im privaten Android-Profil, ohne Kommuni
 - Importergebnis und Fehler zurückmelden, doppelte Verarbeitung von Aufträgen verhindern.
 - Synchronisierung beim App-Start, manuell und regelmäßig im Hintergrund; Offline-Nutzung bleibt möglich, sofortige Ausführung ist nicht garantiert.
 - Verbindung, Empfänger und Synchronisierung im passwortgeschützten Menü verwalten.
-- Berichtversand und Abschluss/Archivierung der Bewegungen getrennt behandeln; separate Bestätigung am Scanner nach Übernahme ins Firmenpostfach.
+- Mailkommandos und Versand im Mail-Menü mit separater Abschlussbestätigung; zusätzlich direkter Mailversand mit automatischer Archivierung unter „Bericht exportieren“.
 
 ## 0.5.0 – 19.10.2026
 
