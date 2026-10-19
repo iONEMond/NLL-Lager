@@ -1,0 +1,50 @@
+plugins { id('com.android.application') }
+
+android {
+    namespace = 'de.nll.lager'
+    compileSdk = 35
+    defaultConfig {
+        applicationId = 'de.nll.lager'
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 1
+        versionName = '0.1.0'
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    sourceSets.getByName('androidTest').assets.setSrcDirs(['../vorlagen'])
+    sourceSets.getByName('test').java.srcDir('src/androidTest/java')
+    sourceSets.getByName('test').java.exclude('**/FlowTest.java')
+    sourceSets.getByName('test').resources.srcDir('../vorlagen')
+    testOptions.unitTests.includeAndroidResources = true
+    lint.abortOnError = true
+}
+
+tasks.withType(Test).configureEach { task ->
+    task.maxHeapSize = '1g'
+    task.testLogging.events('passed', 'failed', 'skipped')
+    task.jvmArgs('-XX:TieredStopAtLevel=1')
+    def testHome = new File(gradle.gradleUserHomeDir, 'robolectric-home')
+    def repository = new File(gradle.gradleUserHomeDir, 'robolectric-m2')
+    task.systemProperty('user.home', testHome.absolutePath)
+    task.systemProperty('maven.repo.local', repository.absolutePath)
+    task.systemProperty('robolectric.dependency.repo.url', 'https://repo.maven.apache.org/maven2')
+    task.doFirst { testHome.mkdirs() }
+    def proxyKeys = ['http.proxyHost', 'http.proxyPort', 'https.proxyHost', 'https.proxyPort', 'http.nonProxyHosts']
+    proxyKeys.each { key ->
+        def value = System.getProperty(key)
+        if (value != null) { task.systemProperty(key, value) }
+    }
+}
+
+dependencies {
+    testImplementation('junit:junit:4.13.2')
+    testImplementation('org.robolectric:robolectric:4.14.1')
+    testImplementation('androidx.test.ext:junit:1.2.1')
+    testImplementation('androidx.test:runner:1.6.2')
+    androidTestImplementation('androidx.test:runner:1.6.2')
+    androidTestImplementation('androidx.test.ext:junit:1.2.1')
+}
