@@ -4,9 +4,9 @@ Neueste veröffentlichte APK: **0.5.0**. Geplante Funktionen sind ausdrücklich 
 
 ## 0.6.0 – in Entwicklung, nicht veröffentlicht
 
-Lokaler Build: 0.6.0-dev, versionCode 7. Die Mail-Anbindung ist implementiert und lokal mit 53 Tests sowie Build und Lint geprüft; echter OAuth-/Mailtest steht mangels eingerichteten Postfachs aus. [Einrichtung und Betriebsablauf](GMAIL-EINRICHTUNG.md). Kein Release-APK-Upload für diesen Entwicklungsstand.
+Lokaler Build: 0.6.0-dev, versionCode 7. Die Mail-Anbindung ist implementiert und lokal mit 53 Tests sowie Build und Lint geprüft; echte Google-Freigabe, Gmail-Abruf und ein leerer Excel-Testexport sind im separaten Emulator geprüft. [Einrichtung und Betriebsablauf](GMAIL-EINRICHTUNG.md). Kein Release-APK-Upload für diesen Entwicklungsstand.
 
-Google-Einrichtung am 19.10.2026: Gmail API, Release-OAuth-Client, Scanner-Testnutzer und Lese-/Sendebereiche konfiguriert. Signierte 0.6.0-dev-Test-APK lokal erstellt und Signatur geprüft. Echte Kontofreigabe und Mailtest weiterhin offen.
+Google-Einrichtung am 19.10.2026: Gmail API, Release-OAuth-Client, Scanner-Testnutzer und Lese-/Sendebereiche konfiguriert. Signierte 0.6.0-dev-Test-APK lokal erstellt und Signatur geprüft. Echte Google-Kontofreigabe und Gmail-Synchronisierung im separaten Emulator erfolgreich. Leerer Excel-Testexport am 19.10.2026 mit Auftragsstatus „Versendet“ bestätigt (0 offene Bewegungen). Zustellung im Firmenpostfach, realer Mailimport und Honeywell-Test weiterhin offen.
 
 Feature-Update für genau einen Scanner im privaten Android-Profil, ohne Kommunikation mit dem Arbeitsprofil.
 
