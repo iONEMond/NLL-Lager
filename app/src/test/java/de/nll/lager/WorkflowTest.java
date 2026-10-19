@@ -24,8 +24,10 @@ public class WorkflowTest {
     private Store db;
     @Before public void setup() {
         RuntimeEnvironment.getApplication().deleteDatabase("nll-lager.db");
+        RuntimeEnvironment.getApplication().getSharedPreferences("admin-settings",0).edit().clear().commit();
+        new AdminSettings(RuntimeEnvironment.getApplication()).saveLocations(java.util.Arrays.asList("A","Lager A","Lager","B","Fahrzeug","Fahrzeug 4"));
         db=new Store(RuntimeEnvironment.getApplication());
-        db.addPerson("0007","Anna");
+        db.addPerson("0007","Anna","0007-L");
         db.addMaterial("00123","M-1","Ventil","Material","Stk");
         controller=Robolectric.buildActivity(MainActivity.class).setup(); activity=controller.get();
     }
@@ -41,14 +43,24 @@ public class WorkflowTest {
     private EditText field(String label) {
         EditText e=(EditText)find(activity.getWindow().getDecorView(),label,true); assertNotNull(label,e); return e;
     }
+    private void chooseFrom(String value) {chooseWarehouse("Von Lager",value);}
+    private void chooseTo(String value) {chooseWarehouse("Nach Lager",value);}
+    private void chooseWarehouse(String label,String value) {
+        android.widget.Spinner spinner=(android.widget.Spinner)find(activity.getWindow().getDecorView(),label,true); assertNotNull(spinner);
+        for(int i=1;i<spinner.getCount();i++) if(value.equals(spinner.getItemAtPosition(i))) {spinner.setSelection(i); return;}
+        fail("Lager fehlt: "+value);
+    }
+    private void unlockForTest() throws Exception {
+        java.lang.reflect.Field f=MainActivity.class.getDeclaredField("adminUnlocked"); f.setAccessible(true); f.setBoolean(activity,true);
+    }
     private void press(String label) {
         View b=find(activity.getWindow().getDecorView(),label,false); assertNotNull(label,b); b.performClick();
     }
     private void scan(String label,String code) {EditText e=field(label); e.setText(code); e.onEditorAction(EditorInfo.IME_ACTION_DONE);}
-    private void signInAndSelect() {scan("Personencode","0007"); scan("Material / Kältemittel scannen","00123");}
+    private void signInAndSelect() {scan("Personencode","0007"); press("Material"); scan("Suchen oder Code scannen","00123");}
     @Test public void scannerLoginAndGermanDecimalBookingWorkEndToEnd() {
         signInAndSelect();
-        field("Von Lager").setText("Lager A"); field("Nach Lager").setText("Fahrzeug 4"); field("Menge (Stk)").setText("1,25");
+        chooseFrom("Lager A"); chooseTo("Fahrzeug 4"); field("Menge (Stk)").setText("1,25");
         assertEquals("1,25",field("Menge (Stk)").getText().toString());
         press("Bewegung speichern");
         AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog(); assertNotNull(dialog);
@@ -57,9 +69,105 @@ public class WorkflowTest {
         org.robolectric.shadows.ShadowLooper.shadowMainLooper().idle();
         assertEquals(1,db.count(false));
         assertTrue(db.history(false).get(0).contains("1.25 Stk")); assertTrue(db.history(false).get(0).contains("Anna"));
-        assertEquals("",field("Material / Kältemittel scannen").getText().toString());
+        assertNotNull(field("Suchen oder Code scannen"));
+    }
+    @Test public void homeSeparatesMaterialAndRefrigerantAndSupportsArticleSelection() {
+        db.addMaterial("00999","KM-32","R32","Kältemittel","kg");
+        scan("Personencode","0007");
+        assertNotNull(find(activity.getWindow().getDecorView(),"Material",false));
+        assertNotNull(find(activity.getWindow().getDecorView(),"Kältemittel",false));
+        press("Kältemittel");
+        assertNull(find(activity.getWindow().getDecorView(),"Ventil, M-1",true));
+        View article=find(activity.getWindow().getDecorView(),"R32, KM-32",true); assertNotNull(article); article.performClick();
+        assertNotNull(field("Menge (kg)"));
+        chooseFrom("Lager"); chooseTo("Fahrzeug"); field("Menge (kg)").setText("2,5");
+        press("Bewegung speichern"); ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        org.robolectric.shadows.ShadowLooper.shadowMainLooper().idle();
+        assertTrue(db.history(false).get(0).contains("2.5 kg"));
+        assertNotNull(field("Suchen oder Code scannen"));
+    }
+    @Test public void articleSearchFiltersDescriptionAndMaterialNumber() {
+        scan("Personencode","0007"); press("Material");
+        field("Suchen oder Code scannen").setText("Vent");
+        assertNotNull(find(activity.getWindow().getDecorView(),"Ventil, M-1",true));
+        field("Suchen oder Code scannen").setText("missing");
+        assertNull(find(activity.getWindow().getDecorView(),"Ventil, M-1",true));
+        field("Suchen oder Code scannen").setText("M-1");
+        assertNotNull(find(activity.getWindow().getDecorView(),"Ventil, M-1",true));
+    }
+    private void invoke(String method,Class<?>[] types,Object... args) throws Exception {
+        java.lang.reflect.Method m=MainActivity.class.getDeclaredMethod(method,types); m.setAccessible(true); m.invoke(activity,args);
+    }
+    private boolean isUnlocked() throws Exception {
+        java.lang.reflect.Field f=MainActivity.class.getDeclaredField("adminUnlocked"); f.setAccessible(true); return f.getBoolean(activity);
+    }
+    @Test public void articleAndEmployeeWarehousesAreSelectedForEveryNewMovement() {
+        db.assignLocation("00123","Lager A",false);
+        signInAndSelect();
+        assertEquals("Lager A",((android.widget.Spinner)find(activity.getWindow().getDecorView(),"Von Lager",true)).getSelectedItem());
+        assertEquals("0007-L",((android.widget.Spinner)find(activity.getWindow().getDecorView(),"Nach Lager",true)).getSelectedItem());
+        chooseTo("Fahrzeug"); press("Bewegung speichern");
+        ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        org.robolectric.shadows.ShadowLooper.shadowMainLooper().idle();
+        scan("Suchen oder Code scannen","00123");
+        assertEquals("0007-L",((android.widget.Spinner)find(activity.getWindow().getDecorView(),"Nach Lager",true)).getSelectedItem());
+    }
+    @Test public void normalModeOnlyOffersMovementFunctions() {
+        assertNull(find(activity.getWindow().getDecorView(),"Personen verwalten",false));
+        scan("Personencode","0007");
+        for(String label:new String[]{"Personen verwalten","Stammdaten verwalten","Bericht exportieren","Bewegungen & Archiv","Einstellungen"})
+            assertNull(label,find(activity.getWindow().getDecorView(),label,false));
+        press("Material");
+        assertNull(find(activity.getWindow().getDecorView(),"Stammdaten verwalten",false));
+        scan("Suchen oder Code scannen","00123");
+        assertTrue(find(activity.getWindow().getDecorView(),"Von Lager",true) instanceof android.widget.Spinner);
+        assertNull(find(activity.getWindow().getDecorView(),"Material verwalten",false));
+    }
+    @Test public void lockedEntryPointsRejectImportExportAndPersonCreation() throws Exception {
+        invoke("beginImport",new Class<?>[]{boolean.class},true);
+        invoke("beginExport",new Class<?>[]{boolean.class},false);
+        invoke("addPerson",new Class<?>[]{});
+        invoke("saveImport",new Class<?>[]{java.util.List.class,boolean.class},java.util.Collections.singletonList(new String[]{"blocked","Blocked"}),true);
+        assertNull(db.person("blocked"));
+        assertNull(org.robolectric.Shadows.shadowOf(activity).getNextStartedActivity());
+        db.book(db.material("00123"),"A","B","1",db.person("0007"));
+        activity.onActivityResult(101,android.app.Activity.RESULT_OK,new android.content.Intent().setData(android.net.Uri.parse("file:///not-written.csv")));
+        assertEquals(1,db.count(false)); assertEquals(0,db.count(true));
+    }
+    @Test public void wrongPasswordStaysLockedAndCorrectPasswordOpensSettings() throws Exception {
+        AdminSettings settings=new AdminSettings(activity); settings.setPassword("Test-password-42".toCharArray());
+        find(activity.getWindow().getDecorView(),"Einstellungen entsperren",true).performClick();
+        AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+        EditText password=(EditText)find(dialog.getWindow().getDecorView(),"Passwort",true); password.setText("wrong");
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick(); assertFalse(isUnlocked()); assertTrue(dialog.isShowing());
+        password.setText("Test-password-42"); dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertTrue(isUnlocked()); assertNotNull(find(activity.getWindow().getDecorView(),"Lageroptionen verwalten",false));
+        find(activity.getWindow().getDecorView(),"Einstellungen sperren",true).performClick();
+        assertFalse(isUnlocked()); assertNull(find(activity.getWindow().getDecorView(),"Lageroptionen verwalten",false));
+    }
+    @Test public void returningFromBackgroundRelocksSettings() throws Exception {
+        unlockForTest(); invoke("settingsMenu",new Class<?>[]{});
+        controller.pause().stop().start().resume().visible();
+        assertFalse(isUnlocked());
+        assertNull(find(activity.getWindow().getDecorView(),"Lageroptionen verwalten",false));
+    }
+    @Test public void removedSourceCannotBeBookedFromStaleDropdown() {
+        signInAndSelect(); chooseFrom("A"); chooseTo("B");
+        new AdminSettings(activity).saveLocations(java.util.Collections.singletonList("Lager"));
+        press("Bewegung speichern");
+        assertEquals(0,db.count(false));
+        assertEquals("OK",ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());
+    }
+    @Test public void successfulExcelExportArchivesOnlyAfterCompletedFile() throws Exception {
+        java.lang.reflect.Field format=MainActivity.class.getDeclaredField("exportExcel"); format.setAccessible(true); format.setBoolean(activity,true);
+        documentExport(false);
+    }
+    @Test public void failedExcelExportKeepsMovementsOpen() throws Exception {
+        java.lang.reflect.Field format=MainActivity.class.getDeclaredField("exportExcel"); format.setAccessible(true); format.setBoolean(activity,true);
+        documentExport(true);
     }
     private void documentExport(boolean fail) throws Exception {
+        unlockForTest();
         db.book(db.material("00123"),"A","B","2.5",db.person("0007"));
         java.lang.reflect.Field cutoff=MainActivity.class.getDeclaredField("exportCutoff");
         cutoff.setAccessible(true); cutoff.setLong(activity,db.cutoff());
@@ -76,7 +184,11 @@ public class WorkflowTest {
             org.robolectric.shadows.ShadowLooper.shadowMainLooper().idle();
             assertFalse("Export completed",writing.getBoolean(activity));
             assertEquals(fail ? 1 : 0,db.count(false)); assertEquals(fail ? 0 : 1,db.count(true));
-            if(!fail) {
+            java.lang.reflect.Field format=MainActivity.class.getDeclaredField("exportExcel"); format.setAccessible(true);
+            if(!fail && format.getBoolean(activity)) {
+                try(java.util.zip.ZipFile zip=new java.util.zip.ZipFile(file)) { assertNotNull(zip.getEntry("xl/worksheets/sheet1.xml")); }
+            }
+            if(!fail && !format.getBoolean(activity)) {
                 String csv=new String(java.nio.file.Files.readAllBytes(file.toPath()),java.nio.charset.StandardCharsets.UTF_8);
                 assertTrue(csv.contains("\"M-1\";\"Ventil\""));
                 assertTrue(csv.contains("\"0007\";\"Anna\""));
@@ -93,7 +205,7 @@ public class WorkflowTest {
     }
     @Test @Config(qualifiers="en") public void decimalCommaIsPreservedOnEnglishScannerSettings() {
         signInAndSelect();
-        field("Von Lager").setText("A"); field("Nach Lager").setText("B");
+        chooseFrom("A"); chooseTo("B");
         field("Menge (Stk)").setText("1,25");
         assertEquals("1,25",field("Menge (Stk)").getText().toString());
         press("Bewegung speichern");
@@ -108,7 +220,7 @@ public class WorkflowTest {
         assertEquals(0,db.count(false));
     }
     @Test public void changedCodeCannotBookPreviouslySelectedMaterial() {
-        signInAndSelect(); field("Von Lager").setText("A"); field("Nach Lager").setText("B");
+        signInAndSelect(); chooseFrom("A"); chooseTo("B");
         field("Material / Kältemittel scannen").setText("different"); press("Bewegung speichern");
         AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
         assertEquals("OK",dialog.getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());

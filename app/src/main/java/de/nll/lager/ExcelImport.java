@@ -123,11 +123,20 @@ public final class ExcelImport {
             for(int j=0;j<names.length;j++) if(names[j].equals(h)) {if(columns[j]!=-1) throw new IOException("Doppelte Spaltenüberschrift: "+names[j]); columns[j]=i;}
         }
         for(int i=0;i<names.length;i++) if(columns[i]<0) throw new IOException("Spalte fehlt: "+names[i]+". Bitte Vorlage verwenden.");
+        int locationColumn=-1;
+        for(int i=0;i<header.length;i++) {
+            String h=normalized(header[i]);
+            if(h.equals(people ? "lagernummer" : "lager") || h.equals(people ? "lager" : "lagerort")) {
+                if(locationColumn>=0) throw new IOException("Doppelte Lager-Spalte."); locationColumn=i;
+            }
+        }
         List<String[]> result=new ArrayList<>(); Set<String> codes=new HashSet<>();
         for(int i=1;i<rows.size();i++) {
-            String[] mapped=new String[names.length];
+            String[] mapped=new String[names.length+(locationColumn>=0 ? 1 : 0)];
             try {
                 for(int j=0;j<names.length;j++) mapped[j]=Rules.required(rows.get(i)[columns[j]],names[j]);
+                String location=locationColumn<0 ? "" : rows.get(i)[locationColumn].trim();
+                if(locationColumn>=0) mapped[names.length]=location.isEmpty() ? "" : Rules.required(location,people ? "Lagernummer" : "Lager");
                 if(!people) {
                     if(mapped[3].equalsIgnoreCase("material")) mapped[3]="Material";
                     else if(mapped[3].equalsIgnoreCase("kältemittel") || mapped[3].equalsIgnoreCase("kaeltemittel")) mapped[3]="Kältemittel";

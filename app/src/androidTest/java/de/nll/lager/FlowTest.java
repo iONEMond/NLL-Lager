@@ -48,6 +48,7 @@ public class FlowTest {
         MainActivity a=(MainActivity)i.startActivitySync(new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         java.io.File file=fail ? new java.io.File(c.getCacheDir(),"missing-"+System.nanoTime()+"/report.csv") : java.io.File.createTempFile("report-",".csv",c.getCacheDir());
         try {
+            java.lang.reflect.Field admin=MainActivity.class.getDeclaredField("adminUnlocked"); admin.setAccessible(true); admin.setBoolean(a,true);
             java.lang.reflect.Field cutoff=MainActivity.class.getDeclaredField("exportCutoff"); cutoff.setAccessible(true); cutoff.setLong(a,db.cutoff());
             java.lang.reflect.Field writing=MainActivity.class.getDeclaredField("writing"); writing.setAccessible(true);
             i.runOnMainSync(() -> a.onActivityResult(101,Activity.RESULT_OK,new Intent().setData(android.net.Uri.fromFile(file))));
@@ -65,17 +66,20 @@ public class FlowTest {
     @Test public void keyboardScannerSignsInSelectsMaterialAndBooksMovement() throws Exception {
         Instrumentation i=InstrumentationRegistry.getInstrumentation(); Context c=i.getTargetContext();
         c.deleteDatabase("nll-lager.db"); Store db=new Store(c);
+        new AdminSettings(c).saveLocations(java.util.Arrays.asList("Lager A","Fahrzeug 4"));
         db.addPerson("0007","Anna"); db.addMaterial("00123","M-1","Ventil","Material","Stk");
         Activity a=i.startActivitySync(new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         try {
             i.runOnMainSync(() -> {EditText e=(EditText)byDescription(a.getWindow().getDecorView(),"Personencode"); assertNotNull(e); e.requestFocus(); e.setText("0007");});
             i.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER); i.waitForIdleSync();
-            i.runOnMainSync(() -> {EditText e=(EditText)byDescription(a.getWindow().getDecorView(),"Material / Kältemittel scannen"); assertNotNull(e); e.requestFocus(); e.setText("00123");});
+            i.runOnMainSync(() -> button(a.getWindow().getDecorView(),"Material").performClick());
+            i.waitForIdleSync();
+            i.runOnMainSync(() -> {EditText e=(EditText)byDescription(a.getWindow().getDecorView(),"Suchen oder Code scannen"); assertNotNull(e); e.requestFocus(); e.setText("00123");});
             i.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER); i.waitForIdleSync();
             i.runOnMainSync(() -> {
                 View root=a.getWindow().getDecorView();
-                ((EditText)byDescription(root,"Von Lager")).setText("Lager A");
-                ((EditText)byDescription(root,"Nach Lager")).setText("Fahrzeug 4");
+                ((android.widget.Spinner)byDescription(root,"Von Lager")).setSelection(1);
+                ((android.widget.Spinner)byDescription(root,"Nach Lager")).setSelection(2);
                 ((EditText)byDescription(root,"Menge (Stk)")).setText("2,5");
                 Button save=button(root,"Bewegung speichern"); assertNotNull(save); save.performClick();
             });
