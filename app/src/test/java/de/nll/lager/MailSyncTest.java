@@ -27,7 +27,7 @@ public class MailSyncTest {
                 .put(new JSONObject().put("name","From").put("value",from))
                 .put(new JSONObject().put("name","Subject").put("value",command))));
     }
-    String subject(String command) {return "NLL "+config.secret+" "+command;}
+    String subject(String command) {return "NLL "+(command.equals("IMPORT MATERIAL") ? "Material" : command.equals("IMPORT PERSONEN") ? "Personen" : command);}
     void movement(String qty) {
         if(store.person("007")==null) store.addPerson("007","Anna","B");
         if(store.material("001")==null) store.addMaterial("001","M1","Ventil","Material","Stk","A");
@@ -44,11 +44,14 @@ public class MailSyncTest {
         @Override byte[] attachment(String id,JSONObject part) {fetched.add(part.optString("filename"));return xlsx;}
         @Override void send(String mime) throws Exception {sent.add(mime);if(fail) throw new IOException("connection lost after acceptance");}
     }
-    @Test public void commandRequiresSecretExactGrammarAndSingleHeaders() throws Exception {
-        assertEquals("",MailProtocol.command("EXPORT",config.secret));
-        assertEquals("",MailProtocol.command("NLL wrong EXPORT",config.secret));
-        assertEquals("",MailProtocol.command(subject("EXPORT DELETE"),config.secret));
-        assertEquals("EXPORT",MailProtocol.command(subject("EXPORT"),config.secret));
+    @Test public void simpleCommandsRequireExactSubjectAndSingleHeaders() throws Exception {
+        assertEquals("",MailProtocol.command("EXPORT"));
+        assertEquals("",MailProtocol.command("NLL wrong EXPORT"));
+        assertEquals("",MailProtocol.command("NLL Export DELETE"));
+        assertEquals("",MailProtocol.command("Re: NLL Export"));
+        assertEquals("EXPORT",MailProtocol.command("  NLL eXpOrT  "));
+        assertEquals("IMPORT MATERIAL",MailProtocol.command("NLL Material"));
+        assertEquals("IMPORT PERSONEN",MailProtocol.command("NLL Personen"));
         JSONObject p=message("a",config.recipient,subject("EXPORT")).getJSONObject("payload");
         p.getJSONArray("headers").put(new JSONObject().put("name","From").put("value",config.recipient));
         assertEquals("",MailProtocol.header(p,"From"));
@@ -135,6 +138,13 @@ public class MailSyncTest {
         movement("1");store.getWritableDatabase().execSQL("DROP TABLE mail_commands");store.getWritableDatabase().setVersion(2);store.close();
         store=new Store(context);mail=new MailStore(store);assertEquals(1,store.count(false));assertEquals("A",store.material("001").location);
         mail.queue("migration-test","file",0,"test");assertTrue(mail.exists("migration-test"));
+    }
+    @Test public void existingConnectionAndCutoffSurviveRemovalOfCommandKey() {
+        MailConfig.prefs(context).edit().putBoolean("connected",true).putString("secret","old-unused-key").commit();
+        long since=config.since;
+        MailConfig.save(context,config.gmail,config.recipient,true);
+        MailConfig updated=new MailConfig(context);
+        assertTrue(updated.ready());assertEquals(since,updated.since);
     }
     @Test public void receiverCannotInjectMailHeaders() {
         assertThrows(IllegalArgumentException.class,() -> MailProtocol.mime("a@example.com\r\nBcc: attacker@example.com","id","text",null));

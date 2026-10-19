@@ -252,9 +252,9 @@ public class MainActivity extends Activity {
             button("Jetzt synchronisieren",true,this::syncMail);
             button("Export jetzt per Mail senden",false,() -> localMailExport(config));
         }
-        if(!config.secret.isEmpty()) {
-            text("Mailbefehle nur vom hinterlegten Firmenpostfach, Betreff exakt wie unten. Den Auftragsschlüssel vertraulich behandeln. Für einen Import genau eine Excel-Datei anhängen. Signaturbilder werden ignoriert; andere zusätzliche Dateien sind nicht erlaubt.",16,MUTED);
-            text("NLL "+config.secret+" IMPORT MATERIAL\n\nNLL "+config.secret+" IMPORT PERSONEN\n\nNLL "+config.secret+" EXPORT",15,INK).setTextIsSelectable(true);
+        if(!config.gmail.isEmpty() && !config.recipient.isEmpty()) {
+            text("Mailbefehle nur vom hinterlegten Firmenpostfach, Betreff wie unten; Groß-/Kleinschreibung ist egal. Für einen Import genau eine Excel-Datei anhängen. Signaturbilder werden ignoriert; andere zusätzliche Dateien sind nicht erlaubt.",16,MUTED);
+            text("NLL Material\n\nNLL Personen\n\nNLL Export",15,INK).setTextIsSelectable(true);
         }
         if(config.connected) button("Automatischen Mailzugriff deaktivieren",false,() -> {
             if(!requireAdmin() || mailBusy()) return;
@@ -342,7 +342,7 @@ public class MainActivity extends Activity {
                     try(Store local=new Store(app)) {
                         org.json.JSONObject payload=new org.json.JSONObject().put("headers",new org.json.JSONArray()
                             .put(new org.json.JSONObject().put("name","From").put("value",config.recipient))
-                            .put(new org.json.JSONObject().put("name","Subject").put("value","NLL "+config.secret+" EXPORT")));
+                            .put(new org.json.JSONObject().put("name","Subject").put("value","NLL Export")));
                         MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id","local-"+UUID.randomUUID()).put("internalDate",System.currentTimeMillis()).put("payload",payload));
                     } catch(Exception e) {MailConfig.status(app,"Export konnte nicht vorbereitet werden.");}
                     finally {MailSync.BUSY.set(false);}

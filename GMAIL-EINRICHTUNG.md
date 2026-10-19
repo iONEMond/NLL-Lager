@@ -33,15 +33,15 @@ Quellen: [Android-Autorisierung](https://developer.android.com/identity/authoriz
 4. **Jetzt synchronisieren** prüft wartende Aufträge. **Export jetzt per Mail senden** erzeugt einen lokalen Exportauftrag an dieselbe Firmenadresse.
 5. Nur neue Mails nach Einrichtung bzw. Adresswechsel und im Gmail-Posteingang werden berücksichtigt. Keine automatische Verarbeitung alter Mailbestände.
 
-Die vollständigen Betreffzeilen stehen einschließlich eines zufälligen Auftragsschlüssels ausschließlich im geschützten Menü:
+Die Betreffzeilen sind ohne Auftragsschlüssel verwendbar:
 
 ```text
-NLL AUFTRAGSSCHLUESSEL IMPORT MATERIAL
-NLL AUFTRAGSSCHLUESSEL IMPORT PERSONEN
-NLL AUFTRAGSSCHLUESSEL EXPORT
+NLL Material
+NLL Personen
+NLL Export
 ```
 
-`AUFTRAGSSCHLUESSEL` ist ein Platzhalter. Den echten Wert aus dem Menü übernehmen, vertraulich behandeln und nicht in GitHub-Issues veröffentlichen. Es werden nur exakt passende Befehle mit gültigem Schlüssel und der hinterlegten Firmenabsenderadresse verarbeitet. Antworten gehen ausschließlich an die konfigurierte Firmenadresse, niemals an Reply-To oder zusätzliche Empfänger. Unbekannte Mails lösen keine Antwort aus.
+Groß-/Kleinschreibung und äußere Leerzeichen sind egal. Zusätze wie `Re:` werden nicht akzeptiert. Nur die hinterlegte Firmenabsenderadresse im From-Header wird zugelassen. Auf Wunsch des Betreibers gibt es keinen zusätzlichen Auftragsschlüssel mehr; eine gefälschte Absenderadresse wird damit nicht kryptografisch ausgeschlossen. Antworten gehen ausschließlich an die konfigurierte Firmenadresse, niemals an Reply-To oder zusätzliche Empfänger. Unbekannte Mails lösen keine Antwort aus. Die bisherigen Betreffzeilen mit Schlüssel gelten nicht mehr. Vorhandene Kontofreigabe, Abrufbeginn und bereits verarbeitete Aufträge bleiben beim Update erhalten.
 
 ## Import und Export
 

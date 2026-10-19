@@ -7,17 +7,16 @@ import com.google.android.gms.auth.api.identity.AuthorizationRequest;
 import com.google.android.gms.common.api.Scope;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.UUID;
 
 /** No passwords or OAuth tokens are stored by the app. Google Play services manages grants. */
 final class MailConfig {
     static final String READ="https://www.googleapis.com/auth/gmail.readonly", SEND="https://www.googleapis.com/auth/gmail.send";
-    final String gmail, recipient, secret;
+    final String gmail, recipient;
     final boolean connected, automatic;
     final long since;
     MailConfig(Context context) {
         SharedPreferences p=prefs(context);
-        gmail=p.getString("gmail",""); recipient=p.getString("recipient",""); secret=p.getString("secret","");
+        gmail=p.getString("gmail",""); recipient=p.getString("recipient","");
         connected=p.getBoolean("connected",false); automatic=p.getBoolean("automatic",true); since=p.getLong("since",0);
     }
     static SharedPreferences prefs(Context c) {return c.getSharedPreferences("mail",Context.MODE_PRIVATE);}
@@ -32,12 +31,12 @@ final class MailConfig {
         if(gmail.equals(recipient)) throw new IllegalArgumentException("Scanner- und Firmenpostfach müssen verschieden sein.");
         MailConfig old=new MailConfig(c);
         SharedPreferences.Editor e=prefs(c).edit().putString("gmail",gmail).putString("recipient",recipient).putBoolean("automatic",automatic);
-        if(!gmail.equals(old.gmail) || !recipient.equals(old.recipient) || old.secret.isEmpty()) {
-            e.putString("secret",UUID.randomUUID().toString().replace("-", "")).putLong("since",System.currentTimeMillis()).putBoolean("connected",false);
+        if(!gmail.equals(old.gmail) || !recipient.equals(old.recipient)) {
+            e.putLong("since",System.currentTimeMillis()).putBoolean("connected",false);
         }
         if(!e.commit()) throw new IllegalStateException("Mail-Einstellungen konnten nicht gespeichert werden.");
     }
-    boolean ready() {return connected && !gmail.isEmpty() && !recipient.isEmpty() && !secret.isEmpty();}
+    boolean ready() {return connected && !gmail.isEmpty() && !recipient.isEmpty();}
     AuthorizationRequest request() {
         return AuthorizationRequest.builder().setAccount(new Account(gmail,"com.google"))
             .setRequestedScopes(Arrays.asList(new Scope(READ),new Scope(SEND))).build();

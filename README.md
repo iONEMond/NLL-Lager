@@ -41,6 +41,8 @@ Nur echte `.xlsx`, erste Tabelle, erste nichtleere Zeile als Überschrift; Spalt
 
 **Codes und Lagernummern vor der Eingabe in Excel als Text formatieren**, damit führende Nullen erhalten bleiben.
 
+Mailbefehle im Entwicklungsstand: **NLL Material**, **NLL Personen**, **NLL Export**. Kein Auftragsschlüssel erforderlich; nur die hinterlegte Firmenabsenderadresse wird zugelassen. Genau eine XLSX-Datei pro Import, Signaturbilder werden ignoriert.
+
 ## Export und Daten
 
 Export, Import, Stammdatenverwaltung, Lageroptionen, Personen und Archiv sind ausschließlich in den passwortgeschützten Einstellungen verfügbar. Beim Export zwischen **Excel (.xlsx)** und **CSV** wählen. Nach erfolgreichem Schreiben und Schließen der Datei werden genau die exportierten offenen Bewegungen archiviert. Bei Abbruch oder Fehler bleiben sie offen. Archivierte Bewegungen können erneut exportiert werden.

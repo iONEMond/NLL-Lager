@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/** Strict command grammar; the random command key is independent of the displayed sender. */
+/** Simple command subjects; MailSync checks the configured sender separately. */
 final class MailProtocol {
     static String header(JSONObject payload,String name) throws JSONException {
         JSONArray headers=payload.optJSONArray("headers");String value="";int matches=0;
@@ -20,11 +20,13 @@ final class MailProtocol {
         if(left>=0 && s.endsWith(">")) s=s.substring(left+1,s.length()-1);
         try {return MailConfig.email(s);} catch(IllegalArgumentException e) {return "";}
     }
-    static String command(String subject,String secret) {
-        String prefix="NLL "+secret+" ";
-        if(secret.length()<32 || !subject.startsWith(prefix)) return "";
-        String cmd=subject.substring(prefix.length()).trim();
-        return Arrays.asList("EXPORT","IMPORT MATERIAL","IMPORT PERSONEN").contains(cmd) ? cmd : "";
+    static String command(String subject) {
+        switch(subject.trim().toLowerCase(Locale.ROOT)) {
+            case "nll material": return "IMPORT MATERIAL";
+            case "nll personen": return "IMPORT PERSONEN";
+            case "nll export": return "EXPORT";
+            default: return "";
+        }
     }
     static void attachments(JSONObject payload,List<JSONObject> out) throws JSONException {attachments(payload,out,0);}
     private static void attachments(JSONObject payload,List<JSONObject> out,int depth) throws JSONException {

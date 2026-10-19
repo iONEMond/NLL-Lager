@@ -55,8 +55,8 @@ final class MailSync {
         if(mail.exists(key) || message.optLong("internalDate",0)<config.since) return;
         JSONObject payload=message.getJSONObject("payload");
         if(!config.recipient.equals(MailProtocol.sender(MailProtocol.header(payload,"From")))) return;
-        String command=MailProtocol.command(MailProtocol.header(payload,"Subject"),config.secret);
-        if(command.isEmpty()) return; // No replies to unknown mail, forged sender alone is insufficient.
+        String command=MailProtocol.command(MailProtocol.header(payload,"Subject"));
+        if(command.isEmpty()) return; // No replies to unknown subjects.
         List<String[]> rows=null;long cutoff=0;byte[] attachment=null;String result;
         try {
             if(command.startsWith("IMPORT")) {
