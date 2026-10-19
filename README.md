@@ -29,6 +29,8 @@ Der private Signierschlüssel und Passwörter bleiben lokal und gehören nicht i
 
 Das Schloss bleibt auch beim Scrollen erreichbar. Freigabe wird nicht dauerhaft gespeichert; Neustart und Verlassen der App sperren. Bereits autorisierte Dateidialoge bzw. laufende Schreibvorgänge dürfen abgeschlossen werden. Ein Prozessverlust erfordert erneute Freigabe.
 
+Unbekannte Artikelcodes können im Material-/KM-Bereich nach Scannen und Bestätigen über **Anlegen** mit dem Gerätepasswort erfasst werden. Der Code und die Artikelart sind vorbelegt. Nach Speichern startet die Buchung; die Einstellungen sind wieder gesperrt.
+
 ## Import
 
 [Materialvorlage](vorlagen/Material-Import.xlsx) und [Personenvorlage](vorlagen/Personen-Import.xlsx) enthalten **Beispieldaten**, die vor produktivem Import ersetzt werden müssen.
@@ -45,7 +47,7 @@ Mailbefehle im Entwicklungsstand: **NLL Material**, **NLL Personen**, **NLL Expo
 
 ## Export und Daten
 
-Export, Import, Stammdatenverwaltung, Lageroptionen, Personen und Archiv sind ausschließlich in den passwortgeschützten Einstellungen verfügbar. Beim Export zwischen **Excel (.xlsx)** und **CSV** wählen. Nach erfolgreichem Schreiben und Schließen der Datei werden genau die exportierten offenen Bewegungen archiviert. Bei Abbruch oder Fehler bleiben sie offen. Archivierte Bewegungen können erneut exportiert werden.
+Export, Import, Stammdatenverwaltung, Lageroptionen, Personen und Archiv sind ausschließlich in den passwortgeschützten Einstellungen verfügbar. Beim Export zwischen **Excel (.xlsx)**, **CSV** und **Per Mail senden & archivieren** wählen. Der Mailweg benötigt eine eingerichtete Gmail-Verbindung und archiviert nach bestätigtem Versand genau die Bewegungen des Berichts; Fehler oder unklarer Versand lassen sie offen. Nach erfolgreichem Schreiben und Schließen der Datei werden genau die exportierten offenen Bewegungen archiviert. Bei Abbruch oder Fehler bleiben sie offen. Archivierte Bewegungen können erneut exportiert werden.
 
 XLSX: Blatt Warenbewegungen mit Kopfzeile, Filter und fixierter erster Zeile. Mengen sind numerisch, Zeitpunkte Excel-Datumswerte, Codes und Lagernummern Text; UTC-Offset als zusätzliche Spalte. Genauere Formatierung folgt später.
 
@@ -65,6 +67,6 @@ export ANDROID_HOME=/pfad/zum/android-sdk
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 3 ergänzt die Mail-Auftragsliste; Migration von Version 1/2 erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
+APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 4 ergänzt den dauerhaften automatischen Mailabschluss; Migration von Version 1/2/3 erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
 
 Geräte-Instrumentierung (`:app:connectedDebugAndroidTest`) löscht App-Testdaten und darf nur auf einer separaten Testinstallation ausgeführt werden. Cloud-Setup bleibt unter `tools/setup-cloud.sh` und `tools/check-cloud.sh` verfügbar.

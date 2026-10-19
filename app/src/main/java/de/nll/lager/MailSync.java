@@ -31,7 +31,7 @@ final class MailSync {
         } finally {BUSY.set(false);}
     }
     static void sync(Context context,MailConfig config,Store store,GmailClient client) throws Exception {
-        MailStore mail=new MailStore(store);sendPending(context,config,mail,client);
+        MailStore mail=new MailStore(store);mail.finishAutomaticArchives();sendPending(context,config,mail,client);
         List<JSONObject> messages=new ArrayList<>();String page="";
         // Bounded pagination. Process oldest first so successive catalog updates keep their order.
         for(int batch=0;batch<10;batch++) {
@@ -51,6 +51,9 @@ final class MailSync {
         }
     }
     static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message) throws Exception {
+        prepare(context,config,store,client,message,false);
+    }
+    static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message,boolean autoArchive) throws Exception {
         String id=message.getString("id"),key=config.gmail+":"+id;MailStore mail=new MailStore(store);
         if(mail.exists(key) || message.optLong("internalDate",0)<config.since) return;
         JSONObject payload=message.getJSONObject("payload");
@@ -84,10 +87,12 @@ final class MailSync {
                             @Override public void write(byte[] b,int offset,int length) throws IOException {if((size+=length)>12*1024*1024) throw new IOException("Export überschreitet das Mail-Limit (12 MB).");out.write(b,offset,length);}
                         };
                         int count=store.writeXlsx(bounded,cutoff,false);attachment=out.toByteArray();
-                        result="EXPORT: "+count+" offene Bewegungen. Auftrag "+id+". Keine Archivierung beim Versand; nach Übernahme separat am Scanner bestätigen.";
+                        result="EXPORT: "+count+" offene Bewegungen. Auftrag "+id+". "+(autoArchive ? "Automatische Archivierung nach bestätigtem Versand." : "Keine Archivierung beim Versand; nach Übernahme separat am Scanner bestätigen.");
                     }
                 }
-                mail.queue(key,saveReply(context,key,MailProtocol.mime(config.recipient,key,result,attachment)),cutoff,result);db.setTransactionSuccessful();
+                mail.queue(key,saveReply(context,key,MailProtocol.mime(config.recipient,key,result,attachment)),cutoff,result);
+                if(autoArchive) mail.archiveAfterSend(key);
+                db.setTransactionSuccessful();
             } finally {db.endTransaction();}
         } catch(IOException | IllegalArgumentException e) {
             // A failed transaction leaves the catalog intact and creates a durable error reply.
@@ -123,6 +128,7 @@ final class MailSync {
             mail.state(r[0],"sending");
             try {client.send(mime);mail.state(r[0],"sent");}
             catch(Exception e) {mail.state(r[0],"uncertain");throw new IOException("Versandstatus unklar. Im Mail-Menü prüfen; keine automatische Wiederholung und keine Archivierung.");}
+            mail.finishAutomaticArchives();
         }
     }
 }

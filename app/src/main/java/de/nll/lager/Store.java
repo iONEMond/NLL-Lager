@@ -25,7 +25,7 @@ public final class Store extends SQLiteOpenHelper {
         public final String code, name, location;
         Person(String code, String name, String location) { this.code = code; this.name = name; this.location=location; }
     }
-    public Store(Context context) { super(context, "nll-lager.db", null, 3); }
+    public Store(Context context) { super(context, "nll-lager.db", null, 4); }
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE materials (code TEXT PRIMARY KEY, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE people (code TEXT PRIMARY KEY, name TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
@@ -39,9 +39,10 @@ public final class Store extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE people ADD COLUMN location TEXT NOT NULL DEFAULT ''");
         }
         if(oldVersion<3) createMailTables(db);
+        else if(oldVersion<4) db.execSQL("ALTER TABLE mail_commands ADD COLUMN auto_archive INTEGER NOT NULL DEFAULT 0");
     }
     private static void createMailTables(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE mail_commands (id TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT NOT NULL, cutoff INTEGER NOT NULL DEFAULT 0, result TEXT NOT NULL, created INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE mail_commands (id TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT NOT NULL, cutoff INTEGER NOT NULL DEFAULT 0, result TEXT NOT NULL, created INTEGER NOT NULL, auto_archive INTEGER NOT NULL DEFAULT 0)");
     }
     public Person person(String code) {
         try (Cursor c = getReadableDatabase().rawQuery("SELECT name,location FROM people WHERE code=?", new String[]{code})) {

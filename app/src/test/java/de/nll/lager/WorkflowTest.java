@@ -58,6 +58,39 @@ public class WorkflowTest {
     }
     private void scan(String label,String code) {EditText e=field(label); e.setText(code); e.onEditorAction(EditorInfo.IME_ACTION_DONE);}
     private void signInAndSelect() {scan("Personencode","0007"); press("Material"); scan("Suchen oder Code scannen","00123");}
+    private AlertDialog authorizeUnknown(String module,String code) throws Exception {
+        new AdminSettings(activity).setPassword("Test-password-42".toCharArray());
+        scan("Personencode","0007");press(module);scan("Suchen oder Code scannen",code);
+        ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+        AlertDialog auth=ShadowAlertDialog.getLatestAlertDialog();
+        EditText password=(EditText)find(auth.getWindow().getDecorView(),"Passwort",true);
+        password.setText("wrong");auth.getButton(AlertDialog.BUTTON_POSITIVE).performClick();assertFalse(isUnlocked());assertNull(db.material(code));
+        password.setText("Test-password-42");auth.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        return ShadowAlertDialog.getLatestAlertDialog();
+    }
+    @Test public void unknownMaterialCanBeCreatedAfterPasswordAndReturnsToLockedBooking() throws Exception {
+        AlertDialog d=authorizeUnknown("Material","NEW001");
+        assertEquals("NEW001",((EditText)find(d.getWindow().getDecorView(),"Scancode",true)).getText().toString());
+        ((EditText)find(d.getWindow().getDecorView(),"Materialnummer",true)).setText("M-new");
+        ((EditText)find(d.getWindow().getDecorView(),"Beschreibung",true)).setText("Neuer Artikel");
+        android.widget.Spinner warehouse=(android.widget.Spinner)find(d.getWindow().getDecorView(),"Lager",true);warehouse.setSelection(1);
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertNotNull(db.material("NEW001"));assertFalse(isUnlocked());assertEquals("NEW001",field("Material / Kältemittel scannen").getText().toString());
+        assertNotNull(find(activity.getWindow().getDecorView(),"Bewegung speichern",false));assertEquals(0,db.count(false));
+    }
+    @Test public void unknownRefrigerantDefaultsToKmAndCancelRelocks() throws Exception {
+        AlertDialog d=authorizeUnknown("Kältemittel","KMNEW");
+        assertEquals("kg",((EditText)find(d.getWindow().getDecorView(),"Einheit (z. B. Stk oder kg)",true)).getText().toString());
+        d.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();assertFalse(isUnlocked());assertNull(db.material("KMNEW"));
+    }
+    @Test public void exportChooserOffersMailOnlyForOpenReport() throws Exception {
+        db.book(db.material("00123"),"A","B","1",db.person("0007"));
+        unlockForTest();java.lang.reflect.Method export=MainActivity.class.getDeclaredMethod("beginExport",boolean.class);export.setAccessible(true);export.invoke(activity,false);
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+        AlertDialog d=ShadowAlertDialog.getLatestAlertDialog();assertEquals(3,d.getListView().getAdapter().getCount());
+        assertEquals("Per Mail senden & archivieren",d.getListView().getAdapter().getItem(2));
+    }
     @Test public void updatedEmployeeWarehouseAppliesToNextArticleSelection() {
         scan("Personencode","0007");db.assignLocation("0007","NEU",true);press("Material");scan("Suchen oder Code scannen","00123");
         android.widget.Spinner target=(android.widget.Spinner)find(activity.getWindow().getDecorView(),"Nach Lager",true);

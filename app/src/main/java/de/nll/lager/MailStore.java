@@ -15,6 +15,17 @@ final class MailStore {
         ContentValues v=new ContentValues();v.put("id",id);v.put("state","pending");v.put("reply",reply);v.put("cutoff",cutoff);v.put("result",result);v.put("created",System.currentTimeMillis());
         store.getWritableDatabase().insertOrThrow("mail_commands",null,v);
     }
+    void archiveAfterSend(String id) {
+        ContentValues v=new ContentValues();v.put("auto_archive",1);
+        store.getWritableDatabase().update("mail_commands",v,"id=? AND state='pending' AND cutoff>0",new String[]{id});
+    }
+    void finishAutomaticArchives() {
+        List<String> ids=new ArrayList<>();
+        try(Cursor c=store.getReadableDatabase().rawQuery("SELECT id FROM mail_commands WHERE auto_archive=1 AND state='sent' AND cutoff>0",null)) {
+            while(c.moveToNext()) ids.add(c.getString(0));
+        }
+        for(String id:ids) confirm(id);
+    }
     void state(String id,String state) {
         ContentValues v=new ContentValues();v.put("state",state);
         store.getWritableDatabase().update("mail_commands",v,"id=?",new String[]{id});

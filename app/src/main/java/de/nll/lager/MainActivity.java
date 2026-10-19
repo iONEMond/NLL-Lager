@@ -201,7 +201,8 @@ public class MainActivity extends Activity {
         if(isAdminScreen()) screen=person==null ? "login" : "home";
         render();
     }
-    private void passwordDialog(boolean change) {
+    private void passwordDialog(boolean change) { passwordDialog(change,null); }
+    private void passwordDialog(boolean change,Runnable afterUnlock) {
         if(change && !requireAdmin()) return;
         boolean setup=!settings.hasPassword();
         LinearLayout layout=dialogBody();
@@ -220,7 +221,9 @@ public class MainActivity extends Activity {
                     settings.setPassword(value);
                 } else if(!settings.verify(value)) {password.setError("Passwort ist falsch."); password.setText(""); return;}
                 password.setText(""); if(repeat!=null) repeat.setText("");
-                adminUnlocked=true; dialog.dismiss(); hideKeyboard(); screen="settings"; notice=""; render();
+                adminUnlocked=true; dialog.dismiss(); hideKeyboard();
+                if(afterUnlock!=null) afterUnlock.run();
+                else {screen="settings"; notice=""; render();}
             } catch(IllegalArgumentException | IllegalStateException e) {password.setError(e.getMessage());}
             finally {java.util.Arrays.fill(value,'\0');}
         });
@@ -331,9 +334,11 @@ public class MainActivity extends Activity {
         new Thread(() -> {MailSync.run(app);runOnUiThread(() -> {if(!isDestroyed()) render();});},"mail-manual").start();
         notice="Synchronisierung gestartet";render();
     }
-    private void localMailExport(MailConfig config) {
+    private void localMailExport(MailConfig config) { localMailExport(config,false); }
+    private void localMailExport(MailConfig config,boolean archiveAfterSend) {
         if(!requireAdmin() || mailBusy()) return;
-        new AlertDialog.Builder(this).setTitle("Excel per Mail senden?").setMessage("Offene Bewegungen an "+config.recipient+" senden? Sie bleiben bis zur separaten Bestätigung offen.")
+        if(!config.ready()) {error("Bitte zuerst unter Mail & Synchronisierung das Postfach einrichten und Google verbinden.");return;}
+        new AlertDialog.Builder(this).setTitle(archiveAfterSend ? "Per Mail senden & archivieren?" : "Excel per Mail senden?").setMessage("Offene Bewegungen an "+config.recipient+" senden? "+(archiveAfterSend ? "Nach bestätigtem Versand werden genau diese Bewegungen archiviert. Bei Fehler oder unklarem Versand bleiben sie offen. Versand bestätigt noch nicht den Empfang im Firmenpostfach." : "Sie bleiben bis zur separaten Bestätigung offen."))
             .setNegativeButton("Abbrechen",null).setPositiveButton("Senden",(d,w) -> {
                 if(!requireAdmin() || mailBusy()) return;
                 final android.content.Context app=getApplicationContext();
@@ -343,7 +348,8 @@ public class MainActivity extends Activity {
                         org.json.JSONObject payload=new org.json.JSONObject().put("headers",new org.json.JSONArray()
                             .put(new org.json.JSONObject().put("name","From").put("value",config.recipient))
                             .put(new org.json.JSONObject().put("name","Subject").put("value","NLL Export")));
-                        MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id","local-"+UUID.randomUUID()).put("internalDate",System.currentTimeMillis()).put("payload",payload));
+                        String id="local-"+UUID.randomUUID();
+                        MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id",id).put("internalDate",System.currentTimeMillis()).put("payload",payload),archiveAfterSend);
                     } catch(Exception e) {MailConfig.status(app,"Export konnte nicht vorbereitet werden.");}
                     finally {MailSync.BUSY.set(false);}
                     MailSync.run(app);runOnUiThread(() -> {if(!isDestroyed()) render();});
@@ -426,7 +432,17 @@ public class MainActivity extends Activity {
         searchQuery=scan.getText().toString().trim(); hideKeyboard();
         Store.Material found=store.material(searchQuery);
         if(found!=null && module.equals(found.type)) selectArticle(found);
+        else if(found!=null) error("Dieser Artikel gehört zum Bereich „"+found.type+"“.");
+        else if(!searchQuery.isEmpty() && store.materials(module,searchQuery).isEmpty()) requestNewArticle(searchQuery);
         else {notice=""; render();}
+    }
+    private void requestNewArticle(String code) {
+        new AlertDialog.Builder(this).setTitle("Unbekannter Code").setMessage("Code „"+code+"“ als "+module+" anlegen? Dafür ist das Gerätepasswort erforderlich.")
+            .setPositiveButton("Anlegen",(d,w) -> {
+                if(adminUnlocked) addMaterial(code,true);
+                else if(!settings.hasPassword()) error("Bitte zuerst über das Schloss ein Gerätepasswort einrichten.");
+                else passwordDialog(false,() -> addMaterial(code,true,true));
+            }).setNegativeButton("Abbrechen",null).show();
     }
     private void showArticles(LinearLayout results,String query) {
         results.removeAllViews();
@@ -483,9 +499,7 @@ public class MainActivity extends Activity {
             Store.Material material=store.material(code);
             if (material==null) {
                 selected=null;
-                if(!adminUnlocked) {error("Unbekannter Artikelcode. Bitte die zuständige Person um Einrichtung bitten."); return;}
-                new AlertDialog.Builder(this).setTitle("Unbekannter Code").setMessage("Code „"+code+"“ als Material oder Kältemittel anlegen?")
-                    .setPositiveButton("Anlegen",(d,w) -> addMaterial(code,true)).setNegativeButton("Abbrechen",(d,w) -> render()).show();
+                requestNewArticle(code);
             } else if(!module.equals(material.type)) { error("Dieser Artikel gehört zum Bereich „"+material.type+"“. Bitte auf der Startseite den passenden Bereich öffnen."); }
             else { selectArticle(material); }
         } catch (IllegalArgumentException e) { error(e.getMessage()); }
@@ -588,7 +602,8 @@ public class MainActivity extends Activity {
             catch(IllegalArgumentException e) {error(e.getMessage());}
         });
     }
-    private void addMaterial(String initial,boolean useAfter) {
+    private void addMaterial(String initial,boolean useAfter) {addMaterial(initial,useAfter,false);}
+    private void addMaterial(String initial,boolean useAfter,boolean relock) {
         if(!requireAdmin()) return;
         LinearLayout l=dialogBody();
         EditText code=dialogField(l,"Scancode",initial);
@@ -604,12 +619,14 @@ public class MainActivity extends Activity {
                 if(!requireAdmin()) return;
                 String c=Rules.required(code.getText().toString(),"Scancode");
                 store.addMaterial(c,number.getText().toString(),description.getText().toString(),refrigerant.isChecked() ? "Kältemittel" : "Material",unit.getText().toString(),Rules.required(spinnerValue(warehouse),"Lager"));
-                if(useAfter) {selected=store.material(c); draftScan=c; draftFrom=selected.location; draftTo=person.location;}
+                if(useAfter) {selected=store.material(c); module=selected.type; draftScan=c; draftFrom=selected.location; draftTo=person.location; draftAmount="1";screen="book";}
+                if(relock) adminUnlocked=false;
                 d.dismiss(); notice="✓ Material angelegt"; render();
             } catch(SQLiteConstraintException e) {code.setError("Dieser Scancode existiert bereits.");}
             catch(IllegalArgumentException e) {error(e.getMessage());}
         });
-        d.setOnCancelListener(v -> render());
+        if(relock) d.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> {adminUnlocked=false;d.dismiss();render();});
+        d.setOnCancelListener(v -> {if(relock) adminUnlocked=false;render();});
     }
     private void history(boolean archived) {
         if(!requireAdmin()) return;
@@ -625,7 +642,7 @@ public class MainActivity extends Activity {
         if(!requireAdmin()) return;
         if(store.count(archived)==0) {error("Keine Bewegungen für diesen Bericht vorhanden."); return;}
         new AlertDialog.Builder(this).setTitle("Exportformat wählen")
-            .setItems(new String[]{"Excel-Tabelle (.xlsx)","CSV (.csv)"},(d,which) -> exportFile(archived,which==0)).setNegativeButton("Abbrechen",null).show();
+            .setItems(archived ? new String[]{"Excel-Tabelle (.xlsx)","CSV (.csv)"} : new String[]{"Excel-Tabelle (.xlsx)","CSV (.csv)","Per Mail senden & archivieren"},(d,which) -> {if(which==2) localMailExport(new MailConfig(this),true);else exportFile(archived,which==0);}).setNegativeButton("Abbrechen",null).show();
     }
     private void exportFile(boolean archived,boolean excel) {
         if(!requireAdmin()) return;

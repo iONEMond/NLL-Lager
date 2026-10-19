@@ -146,6 +146,34 @@ public class MailSyncTest {
         MailConfig updated=new MailConfig(context);
         assertTrue(updated.ready());assertEquals(since,updated.since);
     }
+    @Test public void automaticMailExportArchivesOnlySnapshotAfterConfirmedSend() throws Exception {
+        movement("1");FakeClient client=new FakeClient();
+        MailSync.prepare(context,config,store,client,message("auto",config.recipient,subject("EXPORT")),true);
+        assertEquals(1,store.count(false));movement("2");
+        MailSync.sync(context,config,store,client);
+        assertEquals(1,client.sent.size());assertEquals(1,store.count(false));assertEquals(1,store.count(true));
+        assertEquals("archived",mail.records(config.gmail).get(0)[1]);
+        MailSync.sync(context,config,store,client);assertEquals(1,client.sent.size());
+    }
+    @Test public void ambiguousAutomaticExportDoesNotArchive() throws Exception {
+        movement("1");FakeClient client=new FakeClient();client.fail=true;
+        MailSync.prepare(context,config,store,client,message("auto-fail",config.recipient,subject("EXPORT")),true);
+        assertThrows(IOException.class,() -> MailSync.sync(context,config,store,client));
+        assertEquals(1,store.count(false));assertEquals(0,store.count(true));
+        client.fail=false;MailSync.sync(context,config,store,client);assertEquals(1,client.sent.size());assertEquals(1,store.count(false));
+    }
+    @Test public void automaticArchiveRecoversAfterSendWithoutResending() throws Exception {
+        movement("1");FakeClient client=new FakeClient();
+        MailSync.prepare(context,config,store,client,message("recover",config.recipient,subject("EXPORT")),true);
+        mail.state(config.gmail+":recover","sent");store.close();store=new Store(context);mail=new MailStore(store);
+        MailSync.sync(context,config,store,client);assertTrue(client.sent.isEmpty());assertEquals(1,store.count(true));
+    }
+    @Test public void versionThreeMigrationPreservesPendingCommandsAndMovements() {
+        movement("1");SQLiteDatabase db=store.getWritableDatabase();db.execSQL("DROP TABLE mail_commands");
+        db.execSQL("CREATE TABLE mail_commands (id TEXT PRIMARY KEY,state TEXT NOT NULL,reply TEXT NOT NULL,cutoff INTEGER NOT NULL DEFAULT 0,result TEXT NOT NULL,created INTEGER NOT NULL)");
+        mail.queue("old","file",1,"old export");db.setVersion(3);store.close();store=new Store(context);mail=new MailStore(store);
+        assertEquals(1,store.count(false));assertTrue(mail.exists("old"));mail.finishAutomaticArchives();assertEquals(1,store.count(false));
+    }
     @Test public void receiverCannotInjectMailHeaders() {
         assertThrows(IllegalArgumentException.class,() -> MailProtocol.mime("a@example.com\r\nBcc: attacker@example.com","id","text",null));
     }
