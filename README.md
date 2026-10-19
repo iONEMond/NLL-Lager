@@ -4,7 +4,7 @@ Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen sca
 
 [Versionshistorie und geplante Updates](CHANGELOG.md)
 
-**In Entwicklung: 0.6.0-dev – Gmail-Anbindung.** [Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Gmail-Abruf und Versand eines leeren Excel-Testexports im Emulator geprüft. Exportempfang bestätigt; erfolgreicher Mailimport und Honeywell-Test stehen aus; die veröffentlichte APK unten bleibt 0.5.0.
+**In Entwicklung: 0.6.0-dev – Gmail-Anbindung.** [Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Gmail-Abruf und Versand eines leeren Excel-Testexports im Emulator geprüft. Exportempfang bestätigt; Material-Mailimport mit Firmensignatur erfolgreich; Honeywell-Test steht aus; die veröffentlichte APK unten bleibt 0.5.0.
 
 ## Download
 
