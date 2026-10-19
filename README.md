@@ -2,6 +2,8 @@
 
 Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen scannen und lokal speichern. Helle Oberfläche mit blauen Akzenten, große Schaltflächen und getrennte Artikelbereiche.
 
+[Versionshistorie und geplante Updates](CHANGELOG.md)
+
 ## Download
 
 **[NLL Lager 0.5.0 – signierte APK](downloads/NLL-Lager-0.5.0-release.apk)** – auf GitHub „Download raw file“ wählen. [SHA-256-Prüfsummen](downloads/SHA256SUMS).
