@@ -25,20 +25,23 @@ public final class Store extends SQLiteOpenHelper {
         public final String code, name, location;
         Person(String code, String name, String location) { this.code = code; this.name = name; this.location=location; }
     }
-    public Store(Context context) { super(context, "nll-lager.db", null, 2); }
+    public Store(Context context) { super(context, "nll-lager.db", null, 3); }
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE materials (code TEXT PRIMARY KEY, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE people (code TEXT PRIMARY KEY, name TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL, code TEXT NOT NULL, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, from_location TEXT NOT NULL, to_location TEXT NOT NULL, quantity TEXT NOT NULL, person_code TEXT NOT NULL, person_name TEXT NOT NULL, archived_batch TEXT)");
         db.execSQL("CREATE INDEX movements_pending ON movements(archived_batch, id)");
+        createMailTables(db);
     }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if(oldVersion==1 && newVersion==2) {
+        if(oldVersion<2) {
             db.execSQL("ALTER TABLE materials ADD COLUMN location TEXT NOT NULL DEFAULT ''");
             db.execSQL("ALTER TABLE people ADD COLUMN location TEXT NOT NULL DEFAULT ''");
-            return;
         }
-        throw new IllegalStateException("Keine Migration für diese Datenbankversion verfügbar.");
+        if(oldVersion<3) createMailTables(db);
+    }
+    private static void createMailTables(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE mail_commands (id TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT NOT NULL, cutoff INTEGER NOT NULL DEFAULT 0, result TEXT NOT NULL, created INTEGER NOT NULL)");
     }
     public Person person(String code) {
         try (Cursor c = getReadableDatabase().rawQuery("SELECT name,location FROM people WHERE code=?", new String[]{code})) {

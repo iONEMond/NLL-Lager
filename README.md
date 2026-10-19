@@ -4,6 +4,8 @@ Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen sca
 
 [Versionshistorie und geplante Updates](CHANGELOG.md)
 
+**In Entwicklung: 0.6.0-dev – Gmail-Anbindung.** [Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Noch nicht für echten Mailverkehr validiert; die veröffentlichte APK unten bleibt 0.5.0.
+
 ## Download
 
 **[NLL Lager 0.5.0 – signierte APK](downloads/NLL-Lager-0.5.0-release.apk)** – auf GitHub „Download raw file“ wählen. [SHA-256-Prüfsummen](downloads/SHA256SUMS).
@@ -47,7 +49,7 @@ XLSX: Blatt Warenbewegungen mit Kopfzeile, Filter und fixierter erster Zeile. Me
 
 CSV: UTF-8 mit BOM, Semikolon, Dezimalkomma, vollständig zitierte und gegen Excel-Formelausführung geschützte Textfelder. In Excel Codes als Text importieren.
 
-SQLite-Daten bleiben lokal; die App hat keine Internetberechtigung. Eine Deinstallation oder „App-Daten löschen“ entfernt auch das Archiv. Berichte außerhalb der App sichern. Ein Prozessabbruch zwischen Dateischreiben und Archivierung kann offene Bewegungen zurücklassen; Bewegungs-IDs helfen beim Erkennen doppelter Exporte. Personenanmeldung per Code dient der Zuordnung. Das Einstellungspasswort schützt die Bedienfunktionen der App.
+In der veröffentlichten 0.5.0 bleiben SQLite-Daten lokal und die App hat keine Internetberechtigung. Der Entwicklungsstand 0.6.0-dev ergänzt Internetzugriff für Gmail und übermittelt bei aktivierter Einrichtung Berichte und Rückmeldungen an das konfigurierte Firmenpostfach. Eine Deinstallation oder „App-Daten löschen“ entfernt auch das Archiv. Berichte außerhalb der App sichern. Ein Prozessabbruch zwischen Dateischreiben und Archivierung kann offene Bewegungen zurücklassen; Bewegungs-IDs helfen beim Erkennen doppelter Exporte. Personenanmeldung per Code dient der Zuordnung. Das Einstellungspasswort schützt die Bedienfunktionen der App.
 
 Materiallager ist eine Stammdatenzuordnung. Es gibt weiterhin keine Bestandsberechnung, Werkzeuge oder Nachbestellungen. Kältemittel verwenden eine Menge mit Einheit; getrennte Flaschen-/kg-Erfassung ist noch nicht umgesetzt.
 
@@ -61,6 +63,6 @@ export ANDROID_HOME=/pfad/zum/android-sdk
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 2 ergänzt Lagerfelder und erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
+APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 3 ergänzt die Mail-Auftragsliste; Migration von Version 1/2 erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
 
 Geräte-Instrumentierung (`:app:connectedDebugAndroidTest`) löscht App-Testdaten und darf nur auf einer separaten Testinstallation ausgeführt werden. Cloud-Setup bleibt unter `tools/setup-cloud.sh` und `tools/check-cloud.sh` verfügbar.

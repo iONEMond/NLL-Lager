@@ -29,7 +29,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public class MainActivity extends Activity {
-    private static final int EXPORT = 101, IMPORT = 102;
+    private static final int EXPORT = 101, IMPORT = 102, MAIL_AUTH = 103;
     private static final int INK = Color.rgb(50,49,48), BLUE = Color.rgb(0,120,212), MUTED = Color.rgb(96,94,92);
     private Store store;
     private Store.Person person;
@@ -60,6 +60,8 @@ public class MainActivity extends Activity {
             draftAmount = state.getString("amount", "1"); draftScan = state.getString("scan", "");
         }
         render();
+        MailJobService.schedule(this);
+        if(new MailConfig(this).ready() && new MailConfig(this).automatic) new Thread(() -> MailSync.run(getApplicationContext()),"mail-start").start();
     }
     @Override protected void onSaveInstanceState(Bundle state) {
         captureDraft();
@@ -159,6 +161,7 @@ public class MainActivity extends Activity {
         if(person==null && !isAdminScreen()) screen="login";
         switch (screen) {
             case "settings": settingsMenu(); break;
+            case "mail": mailMenu(); break;
             case "locations": locationMenu(); break;
             case "home": home(); break;
             case "browse": browse(); break;
@@ -187,7 +190,7 @@ public class MainActivity extends Activity {
         } catch (IllegalArgumentException e) { error(e.getMessage()); }
     }
     private boolean isAdminScreen() {
-        return java.util.Arrays.asList("settings","locations","materials","people","history","archive").contains(screen);
+        return java.util.Arrays.asList("settings","locations","materials","people","history","archive","mail").contains(screen);
     }
     private boolean requireAdmin() {
         if(adminUnlocked) return true;
@@ -230,8 +233,122 @@ public class MainActivity extends Activity {
         button("Personen verwalten",false,() -> {screen="people"; render();});
         button("Bericht exportieren",false,() -> beginExport(false));
         button("Bewegungen & Archiv",false,() -> {screen="history"; render();});
+        button("Mail & Synchronisierung",false,() -> {screen="mail";render();});
         button("Passwort ändern",false,() -> passwordDialog(true));
         button("Einstellungen sperren",false,this::lockSettings);
+    }
+    private void mailMenu() {
+        if(!requireAdmin()) return;
+        screen="mail";base("Mail & Synchronisierung","Gmail · eigener Scanner-Posteingang");
+        MailConfig config=new MailConfig(this);
+        text(config.gmail.isEmpty() ? "Noch kein Postfach eingerichtet." : "Scanner: "+config.gmail+"\nFirmenpostfach: "+config.recipient,17,INK);
+        text(config.connected ? "Google-Zugriff freigegeben" : "Google-Zugriff noch nicht bestätigt",16,MUTED);
+        text("Status: "+MailConfig.prefs(this).getString("status","Noch keine Synchronisierung"),16,MUTED);
+        long last=MailConfig.prefs(this).getLong("last",0);
+        if(last>0) text("Letzter Versuch: "+new SimpleDateFormat("dd.MM.yyyy HH:mm",Locale.GERMANY).format(new Date(last)),15,MUTED);
+        button("Postfach & Empfänger einrichten",true,this::configureMail);
+        if(!config.gmail.isEmpty()) button("Mit Google verbinden",false,this::authorizeMail);
+        if(config.ready()) {
+            button("Jetzt synchronisieren",true,this::syncMail);
+            button("Export jetzt per Mail senden",false,() -> localMailExport(config));
+        }
+        if(!config.secret.isEmpty()) {
+            text("Mailbefehle nur vom hinterlegten Firmenpostfach, Betreff exakt wie unten. Den Auftragsschlüssel vertraulich behandeln. Für einen Import genau eine Excel-Datei anhängen.",16,MUTED);
+            text("NLL "+config.secret+" IMPORT MATERIAL\n\nNLL "+config.secret+" IMPORT PERSONEN\n\nNLL "+config.secret+" EXPORT",15,INK).setTextIsSelectable(true);
+        }
+        if(config.connected) button("Automatischen Mailzugriff deaktivieren",false,() -> {
+            if(!requireAdmin() || mailBusy()) return;
+            MailConfig.prefs(this).edit().putBoolean("connected",false).apply();MailJobService.schedule(this);render();
+        });
+        text("Letzte Aufträge",20,INK);
+        for(String[] record:new MailStore(store).records(config.gmail)) {
+            String state=record[1];
+            String label="sent".equals(state) ? "Versendet" : "archived".equals(state) ? "Abgeschlossen" : "uncertain".equals(state) ? "Versand unklar" : "Wartet auf Versand";
+            text(label+" · "+record[2],15,INK);
+            if("sent".equals(state) && Long.parseLong(record[3])>0) button("Übernahme bestätigen & archivieren",false,() -> {
+                if(!requireAdmin() || mailBusy()) return;
+                new AlertDialog.Builder(this).setTitle("Export übernommen?").setMessage("Nur die noch offenen Bewegungen dieses Berichts archivieren? Spätere Buchungen bleiben offen.")
+                    .setNegativeButton("Abbrechen",null).setPositiveButton("Abschließen",(d,w) -> {
+                        if(!requireAdmin() || mailBusy()) return;new MailStore(store).confirm(record[0]);render();
+                    }).show();
+            });
+            if("uncertain".equals(state)) button("Versand prüfen / erneut versuchen",false,() -> {
+                if(!requireAdmin() || mailBusy()) return;
+                new AlertDialog.Builder(this).setTitle("Versandstatus unklar").setMessage("Bitte zuerst das Firmenpostfach und den Gmail-Ordner Gesendet prüfen. Bei erneutem Versand kann eine zweite Mail entstehen. Es wird derselbe Bericht versendet; Stammdaten werden nicht erneut importiert.")
+                    .setNegativeButton("Abbrechen",null).setNeutralButton("Ist angekommen",(d,w) -> {if(requireAdmin() && !mailBusy()) {new MailStore(store).state(record[0],"sent");render();}})
+                    .setPositiveButton("Erneut senden",(d,w) -> {if(requireAdmin() && !mailBusy()) {new MailStore(store).state(record[0],"pending");syncMail();}}).show();
+            });
+        }
+    }
+    private boolean mailBusy() {
+        if(!MailSync.BUSY.get()) return false;error("Mail-Synchronisierung läuft. Bitte kurz warten.");return true;
+    }
+    private void configureMail() {
+        if(!requireAdmin() || mailBusy()) return;
+        MailConfig config=new MailConfig(this);LinearLayout layout=dialogBody();
+        EditText gmail=dialogField(layout,"Scanner-Gmail-Adresse",config.gmail),recipient=dialogField(layout,"Firmenadresse (Absender und Empfänger)",config.recipient);
+        gmail.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);recipient.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        CheckBox automatic=new CheckBox(this);automatic.setText("Beim Start und im Hintergrund synchronisieren (ca. 15 Minuten oder später)");automatic.setChecked(config.automatic);layout.addView(automatic);
+        AlertDialog dialog=form("Mail einrichten",layout);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if(!requireAdmin() || mailBusy()) return;
+            try {MailConfig.save(this,gmail.getText().toString(),recipient.getText().toString(),automatic.isChecked());MailJobService.schedule(this);dialog.dismiss();render();}
+            catch(Exception e) {recipient.setError(e.getMessage());}
+        });
+    }
+    private void authorizeMail() {
+        if(!requireAdmin() || mailBusy()) return;
+        MailConfig config=new MailConfig(this);
+        com.google.android.gms.auth.api.identity.Identity.getAuthorizationClient(this).authorize(config.request())
+            .addOnSuccessListener(this,result -> {
+                if(!adminUnlocked) return;
+                if(result.hasResolution()) {
+                    try {pickerOpen=true;startIntentSenderForResult(result.getPendingIntent().getIntentSender(),MAIL_AUTH,null,0,0,0);}
+                    catch(Exception e) {pickerOpen=false;error("Google-Anmeldung konnte nicht geöffnet werden.");}
+                } else verifyMailAuthorization(result);
+            }).addOnFailureListener(this,e -> error("Google-Freigabe fehlgeschlagen. Gmail API und Android-OAuth-Client (Paketname und Zertifikat) im Google-Cloud-Projekt prüfen."));
+    }
+    private void verifyMailAuthorization(com.google.android.gms.auth.api.identity.AuthorizationResult result) {
+        if(!requireAdmin()) return;
+        if(result.getAccessToken()==null || !result.getGrantedScopes().containsAll(java.util.Arrays.asList(MailConfig.READ,MailConfig.SEND))) {error("Bitte sowohl Lesen als auch Senden für das Scanner-Postfach freigeben.");return;}
+        MailConfig requested=new MailConfig(this);
+        new Thread(() -> {
+            boolean valid=false;
+            try {valid=requested.gmail.equalsIgnoreCase(new GmailClient(result.getAccessToken()).call("profile",null).getString("emailAddress"));} catch(Exception ignored) { }
+            final boolean connected=valid;
+            runOnUiThread(() -> {
+                if(isDestroyed() || !adminUnlocked) return;
+                MailConfig current=new MailConfig(this);
+                if(!current.gmail.equals(requested.gmail) || !current.recipient.equals(requested.recipient)) return;
+                if(!connected) {error("Gmail-Postfach konnte nicht bestätigt werden. Kontowahl und API-Freigabe prüfen.");return;}
+                MailConfig.prefs(this).edit().putBoolean("connected",true).apply();MailJobService.schedule(this);notice="Gmail-Verbindung bestätigt";render();
+            });
+        },"mail-authorize").start();
+    }
+    private void syncMail() {
+        if(!requireAdmin() || mailBusy()) return;
+        final android.content.Context app=getApplicationContext();
+        new Thread(() -> {MailSync.run(app);runOnUiThread(() -> {if(!isDestroyed()) render();});},"mail-manual").start();
+        notice="Synchronisierung gestartet";render();
+    }
+    private void localMailExport(MailConfig config) {
+        if(!requireAdmin() || mailBusy()) return;
+        new AlertDialog.Builder(this).setTitle("Excel per Mail senden?").setMessage("Offene Bewegungen an "+config.recipient+" senden? Sie bleiben bis zur separaten Bestätigung offen.")
+            .setNegativeButton("Abbrechen",null).setPositiveButton("Senden",(d,w) -> {
+                if(!requireAdmin() || mailBusy()) return;
+                final android.content.Context app=getApplicationContext();
+                new Thread(() -> {
+                    if(!MailSync.BUSY.compareAndSet(false,true)) return;
+                    try(Store local=new Store(app)) {
+                        org.json.JSONObject payload=new org.json.JSONObject().put("headers",new org.json.JSONArray()
+                            .put(new org.json.JSONObject().put("name","From").put("value",config.recipient))
+                            .put(new org.json.JSONObject().put("name","Subject").put("value","NLL "+config.secret+" EXPORT")));
+                        MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id","local-"+UUID.randomUUID()).put("internalDate",System.currentTimeMillis()).put("payload",payload));
+                    } catch(Exception e) {MailConfig.status(app,"Export konnte nicht vorbereitet werden.");}
+                    finally {MailSync.BUSY.set(false);}
+                    MailSync.run(app);runOnUiThread(() -> {if(!isDestroyed()) render();});
+                },"mail-export").start();
+            }).show();
     }
     private void locationMenu() {
         if(!requireAdmin()) return;
@@ -328,6 +445,10 @@ public class MainActivity extends Activity {
         if(articles.size()==200) {TextView hint=new TextView(this); hint.setText("Erste 200 Treffer · Suche eingrenzen"); results.addView(hint);}
     }
     private void selectArticle(Store.Material article) {
+        // A remote catalog update takes effect for the next booking, not an existing draft.
+        person=store.person(person.code);
+        article=store.material(article.code);
+        if(person==null || article==null) {screen=person==null ? "login" : "browse";render();return;}
         selected=article; draftScan=article.code; draftFrom=article.location; draftTo=person.location; draftAmount="1"; notice=""; screen="book"; render();
     }
     private void booking() {
@@ -521,6 +642,12 @@ public class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);
+        if(request==MAIL_AUTH) {
+            pickerOpen=false;
+            if(!adminUnlocked || result!=RESULT_OK || data==null) {notice="Gmail-Verbindung abgebrochen. Einstellungen ggf. erneut entsperren.";render();return;}
+            try {verifyMailAuthorization(com.google.android.gms.auth.api.identity.Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}
+            catch(Exception e) {error("Gmail-Freigabe konnte nicht übernommen werden.");}return;
+        }
         if((request==IMPORT || request==EXPORT) && !adminUnlocked) {pickerOpen=false; notice="Einstellungen gesperrt · Vorgang abgebrochen"; render(); return;}
         if(request==IMPORT) {
             pickerOpen=false;

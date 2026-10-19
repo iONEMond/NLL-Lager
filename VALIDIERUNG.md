@@ -1,3 +1,7 @@
+# Entwicklung 0.6.0-dev – noch nicht veröffentlicht
+
+Stand: 19.10.2026. Gmail-API-Anbindung, Auftragsverarbeitung, transaktionaler Mailimport, dauerhafte Versandwarteschlange und separat bestätigter Exportabschluss lokal umgesetzt. Echte Google-Anmeldung und Mailverkehr sind noch nicht geprüft. 53 lokale Tests bestanden (davon 11 Mail-Verarbeitungstests und 2 zusätzliche UI-Tests). Debug-Build und Android-Lint erfolgreich; Lint ohne Fehler. Datenbankmigration aus Version 1 und 2, Import-Rollback, doppelte Aufträge, Export-Snapshot, getrennte Archivierung, unklarer Versandstatus, Empfängerprüfung und geschütztes Mail-Menü geprüft. Entwicklungsversion im bestehenden API-37-Emulator installiert und gestartet; keine AndroidRuntime-Startfehler im geprüften Logauszug. Kein echter Google-Login, kein echter Mailversand, kein Honeywell-Hintergrundtest.
+
 # Validierung – NLL Lager 0.5.0
 
 Stand: 19.10.2026. Versionsfreigabe ohne Änderungen an der App-Logik gegenüber 0.4.1.

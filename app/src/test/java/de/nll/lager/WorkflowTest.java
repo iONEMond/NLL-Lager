@@ -58,6 +58,18 @@ public class WorkflowTest {
     }
     private void scan(String label,String code) {EditText e=field(label); e.setText(code); e.onEditorAction(EditorInfo.IME_ACTION_DONE);}
     private void signInAndSelect() {scan("Personencode","0007"); press("Material"); scan("Suchen oder Code scannen","00123");}
+    @Test public void updatedEmployeeWarehouseAppliesToNextArticleSelection() {
+        scan("Personencode","0007");db.assignLocation("0007","NEU",true);press("Material");scan("Suchen oder Code scannen","00123");
+        android.widget.Spinner target=(android.widget.Spinner)find(activity.getWindow().getDecorView(),"Nach Lager",true);
+        assertEquals("NEU",target.getSelectedItem());
+    }
+    @Test public void mailSettingsAreProtectedAndRelockWithApp() throws Exception {
+        java.lang.reflect.Method menu=MainActivity.class.getDeclaredMethod("mailMenu");menu.setAccessible(true);
+        menu.invoke(activity);assertNull(find(activity.getWindow().getDecorView(),"Postfach & Empfänger einrichten",false));
+        AlertDialog denied=ShadowAlertDialog.getLatestAlertDialog();if(denied!=null) denied.dismiss();
+        unlockForTest();menu.invoke(activity);assertNotNull(find(activity.getWindow().getDecorView(),"Postfach & Empfänger einrichten",false));
+        controller.pause().stop().start().resume();assertNull(find(activity.getWindow().getDecorView(),"Postfach & Empfänger einrichten",false));
+    }
     @Test public void scannerLoginAndGermanDecimalBookingWorkEndToEnd() {
         signInAndSelect();
         chooseFrom("Lager A"); chooseTo("Fahrzeug 4"); field("Menge (Stk)").setText("1,25");

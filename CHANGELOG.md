@@ -2,9 +2,11 @@
 
 Neueste veröffentlichte APK: **0.5.0**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
-## 0.6.0 – geplant, noch nicht implementiert oder veröffentlicht
+## 0.6.0 – in Entwicklung, nicht veröffentlicht
 
-Vorgesehener versionCode: 7. Feature-Update für genau einen Scanner im privaten Android-Profil, ohne Kommunikation mit dem Arbeitsprofil.
+Lokaler Build: 0.6.0-dev, versionCode 7. Die Mail-Anbindung ist implementiert und lokal mit 53 Tests sowie Build und Lint geprüft; echter OAuth-/Mailtest steht mangels eingerichteten Postfachs aus. [Einrichtung und Betriebsablauf](GMAIL-EINRICHTUNG.md). Kein Release-APK-Upload für diesen Entwicklungsstand.
+
+Feature-Update für genau einen Scanner im privaten Android-Profil, ohne Kommunikation mit dem Arbeitsprofil.
 
 - Eigenes Gmail-Postfach direkt in der Lager-App anbinden; Gmail-App und eigener Vermittlungsserver sind nicht erforderlich. Google-API-/OAuth-Einrichtung ist erforderlich.
 - Material- und Personenlisten aus Excel-Mailanhängen prüfen und importieren; vorhandene Datensätze gezielt aktualisieren und neue ergänzen.
@@ -12,7 +14,7 @@ Vorgesehener versionCode: 7. Feature-Update für genau einen Scanner im privaten
 - Importergebnis und Fehler zurückmelden, doppelte Verarbeitung von Aufträgen verhindern.
 - Synchronisierung beim App-Start, manuell und regelmäßig im Hintergrund; Offline-Nutzung bleibt möglich, sofortige Ausführung ist nicht garantiert.
 - Verbindung, Empfänger und Synchronisierung im passwortgeschützten Menü verwalten.
-- Berichtversand und Abschluss/Archivierung der Bewegungen getrennt behandeln; genaue Abschlussbedienung vor Umsetzung festlegen.
+- Berichtversand und Abschluss/Archivierung der Bewegungen getrennt behandeln; separate Bestätigung am Scanner nach Übernahme ins Firmenpostfach.
 
 ## 0.5.0 – 19.10.2026
 
