@@ -12,7 +12,7 @@ Reproduzierbarer Fehlerfall: Lokale Exportanforderungen wurden als synthetische 
 - Nach der Vorbereitung wird die gespeicherte Auftragskennung geprüft. Doppelte lokale Kennungen führen zu einem Fehler statt zu einem stillen Überspringen.
 - Vorbereitungsfehler werden mit konkreter Ursache im Mailstatus und nach dem Fortschrittsdialog angezeigt. Fehlerhafte lokale Berichte werden nicht als vermeintlich erfolgreich vorbereitete Fehlerantwort versendet. Keine Archivierung bei Vorbereitungsfehler.
 
-Prüfung: 145 lokale Tests ohne Fehler, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Noch keine signierte APK oder Veröffentlichung; Release bleibt 0.7.1. Geräte- und echter Mailtest offen.
+Prüfung: 145 lokale Tests ohne Fehler, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Abschließend 147 lokale Tests und Debug-Lint erfolgreich (neue Gerätetestfälle auch lokal enthalten). Zusätzlich zwei gezielte Android-Instrumentierungstests im NLL_Gmail_Test-Emulator bestanden: Auftragserstellung/Folgeexport bei Zukunftsgrenze und unveränderter Eingangsmailfilter; Mailversand dabei simuliert. Noch keine signierte APK oder Veröffentlichung; Release bleibt 0.7.1. Geräte- und echter Mailtest offen.
 
 ## 0.7.1 – veröffentlicht am 20.10.2026
 

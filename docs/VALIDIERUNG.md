@@ -108,3 +108,11 @@ Neue Abläufe: 64 Tests, Debug-Build und Lint erfolgreich. Vier zusätzliche Mai
 140 Tests ohne Fehler/übersprungene Tests, Release-Build und Release-Lint erneut erfolgreich. Paket de.nll.lager, Version 0.7.1, Code 15, Mindest-API 26, bestehender Release-Signer durch apksigner geprüft. APK 2.444.688 Bytes, SHA-256 44b52378981eb0acd013e16dc91f111014aa797bc4c7d903b26565a4d3cd7aca. Als stabiler Release v0.7.1 veröffentlicht. Latest-API, öffentlicher Download, SHA-256/GitHub-Digest und APK-Signatur erfolgreich geprüft. SHA256SUMS 657 Bytes, SHA-256 269e9e7bf1332404caf76ceb55ebc94a7b57726393199e5a7199f632fac50eb3. Kein Honeywell- oder echter Mailtest dieses Stands.
 
 Rücknahme 0.7.0 nach ausdrücklicher Bestätigung des Betreibers: GitHub-Release mit Assets gelöscht. Anonyme Prüfungen liefern 404 für Release-API und alten APK-Download; Latest weiterhin v0.7.1. Quelltag nicht entfernt.
+
+## Gezielter Android-Emulatortest 0.7.2-dev
+
+Auf Betreiberwunsch am 20.10.2026 im vorhandenen Emulator NLL_Gmail_Test (emulator-5554) ausgeführt. Vorschau de.nll.lager.preview separat installiert, Haupt-App nicht verändert. Nur LocalExportDeviceTest über AndroidJUnitRunner ausgeführt: OK (2 tests). Testdatenbank, Einstellungen und Outbox mit eigenem export-device-test-Präfix/-Ordner; produktive Vorschau-/Haupt-App-Daten nicht gelöscht.
+
+Geprüft: lokaler Auftrag trotz Zukunfts-Abrufgrenze gespeichert und mit XLSX verarbeitet, bestätigte Snapshot-Archivierung ohne spätere Buchung, separater zweiter Export und getrennte Verarbeitung; echte Eingangsmail vor Abrufgrenze unverändert übersprungen. Versand durch AcceptedClient simuliert, keine Google-Anmeldung, kein echtes Senden, kein Nachweis der Firmenpostfach-Zustellung oder konkreten Scannerursache. Erster Instrumentierungslauf scheiterte am Testaufbau (nicht beschreibbarer Kontext der Test-APK), danach auf beschreibbaren isolierten Präfix-Kontext umgestellt und erfolgreich erneut ausgeführt.
+
+Abschließend gesamte lokale Suite einschließlich der beiden neuen Gerätetestfälle unter Robolectric erneut ausgeführt: 147 Tests ohne Fehler/übersprungene Tests, lintDebug erfolgreich. Release-Build/-Lint vom unveränderten App-Quellstand der vorigen 145-Test-Prüfung; seitdem nur Tests/Dokumentation ergänzt.
