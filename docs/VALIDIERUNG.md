@@ -1,3 +1,7 @@
+# Signierte APK 0.6.1 – 20.10.2026
+
+Android Studio meldet erfolgreichen signierten Release-Build nach lokaler Passworteingabe des Betreibers. apksigner verify --print-certs erfolgreich; bestehendes Release-Zertifikat SHA-256 1d70da7786708b6dcd04319235fc76ca4d411f12474a63bc98852fc9b5fa25c0. aapt: de.nll.lager, versionName 0.6.1, versionCode 10, minSdk 26, targetSdk 35. APK 2.423.836 Bytes; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31. Lokale Kopien im Projektordner und downloads/; keine erneuten Geräte- oder Mailtests. Release-Upload und externe Downloadprüfung noch offen.
+
 # Repository-Pflege – 20.10.2026
 
 Dokumentation nach docs/ gegliedert, README gekürzt, Übergabe und Entwicklungsanleitung ergänzt. 11 Markdown-Dokumente mit 46 relativen Dateilinks geprüft; ein absichtlich ungültiger Link wurde im Prüftest korrekt abgelehnt und die temporäre Testdatei anschließend entfernt. About-Text auf den neuen Anleitungsordner angepasst. assembleRelease und lintRelease danach erfolgreich; fachliche Logik unverändert, bestehende 97 Funktionstests aus dem letzten Lauf nicht erneut ausgeführt. Keine weitere Geräteprüfung und keine signierte Veröffentlichung.

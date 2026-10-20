@@ -6,7 +6,9 @@ Neueste veröffentlichte APK: **0.6.0**. Geplante Funktionen sind ausdrücklich 
 
 README auf Projektstatus, Installation und Navigation reduziert; Bedienung, Entwicklung und bestehende Anleitungen unter `docs/` gebündelt. `Übergabe.md` dokumentiert Architektur, Betriebsentscheidungen, Release-/Signierablauf, Daten- und Mailbesonderheiten sowie offene Tests für Nachfolge-Agenten. Projektregeln verweisen auf die Übergabe. Historische APKs mit ihrem Zweck dokumentiert und als Testdateien/Altlinks erhalten. Neue Build-Artefakte und lokale Altunterlagen ausgeschlossen. Relative Markdown-Dateilinks werden mit `tools/check_docs.py` geprüft. Keine fachliche Verhaltensänderung; Release 0.6.1 bleibt unsigniert und unveröffentlicht.
 
-## 0.6.1 – Release vorbereitet, nicht veröffentlicht
+## 0.6.1 – signiert, Veröffentlichung vorbereitet
+
+20.10.2026: Betreiber hat die Schlüsselpasswörter erneut lokal eingegeben. APK mit bestehendem Release-Schlüssel signiert; apksigner erfolgreich, Paket de.nll.lager, Version 0.6.1, versionCode 10 und Mindest-API 26 geprüft. Größe 2.423.836 Bytes, SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31. Release-Upload und anonyme Downloadprüfung stehen noch aus. Frühere Vorbereitungsnotizen bleiben als Verlauf erhalten.
 
 „Über die App (About)“ im geschützten Einstellungsmenü ergänzt: installierte Version und Buildnummer direkt aus den Android-Paketdaten, Haupt-App/Vorschau, Paketname, Android-/API-Version, Datenbankversion sowie Hinweise zu Offline-Betrieb, Speicherung, Sicherung, Gmail, Updates und Projektanleitungen. Zurück-Pfeil und automatische Einstellungssperre gelten auch hier. Teil des noch nicht signierten Release-Kandidaten 0.6.1.
 

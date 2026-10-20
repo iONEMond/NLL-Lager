@@ -15,9 +15,9 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.5.0, Code 6 | Signierter Release; Betreiber meldete am 20.10.2026 erfolgreichen Gerätetest. Keine einzelnen Prüfschritte genannt. |
 | 0.6.0, Code 8 | Neuester veröffentlichter GitHub-Release `v0.6.0`. Gmail und weitere Bedienabläufe. Noch keine umfassende Honeywell-Bestätigung. |
 | 0.6.1-dev, Code 9 | Früherer lokaler Entwicklungsstand, keine stabile Veröffentlichung. |
-| 0.6.1, Code 10 | Aktuell vorbereiteter Quellstand, **nicht signiert und nicht veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
+| 0.6.1, Code 10 | Aktueller Quellstand, **signiert und geprüft, noch nicht veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
 
-Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Für 0.6.1 verlangt Android Studio beide Passwörter erneut. Der Betreiber hat aktuell keinen Zugriff auf Android Studio; Veröffentlichung bis zur Signierung offen lassen.
+Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Die Veröffentlichung ist noch ausstehend. Passwörter weiterhin unbekannt und nicht gespeichert.
 
 Letzter funktionaler Prüfstand: 97 lokale Tests, Release-Build und Release-Lint erfolgreich, einschließlich nachträglicher About-Ergänzung. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
 
@@ -135,7 +135,7 @@ Zwei Emulatoren waren vorhanden: „Medium Phone API 37.0“ mit älteren Instal
 
 ## Nächste Aufgaben und bekannte Grenzen
 
-1. Nach erneutem Betreiberzugriff 0.6.1 mit vorhandenem Schlüssel signieren, Signatur/Metadaten/Prüfsummen prüfen, stabilen Release veröffentlichen und Download anonym prüfen. Keine Fertigmeldung vor erfolgreichem Asset-Upload.
+1. Signierte und geprüfte 0.6.1 als stabilen Release veröffentlichen und Download anonym prüfen. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Keine Fertigmeldung vor erfolgreichem Asset-Upload.
 2. Auf Honeywell Update von 0.5.0 mit Datenerhalt, Scanner-Eingabe, Passwortschutz und unbekannte Artikel testen.
 3. Echte Firmen-XLSX statt Foto prüfen; neues Berichtslayout und Pflichtbewegungsart mit Betreiber bestätigen.
 4. Sicherungsordner, Wiederherstellung, Android-Installationsfreigabe und späteres In-App-Update auf echter Hardware testen.

@@ -8,7 +8,7 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | --- | --- |
 | **0.5.0** | Vom Betreiber auf dem Gerät erfolgreich getestet |
 | **0.6.0 · Build 8** | Neuester veröffentlichter Release; ergänzt Gmail |
-| **0.6.1 · Build 10** | Vorbereitet, noch **nicht signiert oder veröffentlicht** |
+| **0.6.1 · Build 10** | Signiert und geprüft, noch **nicht veröffentlicht** |
 
 0.6.1 ergänzt Firmenlisten-Import, das neue Exportformat, Bewegungsarten, vollständige Sicherung/Wiederherstellung, GitHub-Updates und ein About-Menü. Lokale Prüfungen: 97 Tests, Release-Build und Release-Lint erfolgreich. Tests der neuen Abläufe auf dem Honeywell stehen aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 
