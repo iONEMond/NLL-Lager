@@ -11,6 +11,7 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | **0.6.1 · Build 10** | Vorheriger Release |
 | **0.7.0 · Build 13** | Wegen Mailproblemen zurückgezogen; Download entfernt |
 | **0.7.1 · Build 15** | **Neuester veröffentlichter Release** |
+| 0.7.2-dev · Build 16 | Unveröffentlicht: lokale Exportaufträge ohne Posteingangs-Zeitfilter, konkrete Fehlermeldung |
 
 [Release 0.7.1](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.1) ergänzt Abbruch und Zeitlimit für Mailvorgänge, aktuelle Hintergrundanzeige und Excel über die Android-Mail-App teilen. 140 lokale Tests, Release-Build und Lint erfolgreich; öffentlicher Download und Signatur geprüft. Geräte-/Mailtest der Korrektur steht aus. 0.7.0 wegen gemeldeter Mailprobleme nicht weiter installieren. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 

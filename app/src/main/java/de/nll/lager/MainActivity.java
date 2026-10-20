@@ -540,13 +540,13 @@ public class MainActivity extends Activity {
                 new Thread(() -> {
                     if(!MailSync.BUSY.compareAndSet(false,true)) {runOnUiThread(() -> {writing=false;if(!isDestroyed()){progress.dismiss();error("Synchronisierung läuft bereits.");}});return;}
                     try(Store local=new Store(app)) {
-                        org.json.JSONObject payload=new org.json.JSONObject().put("headers",new org.json.JSONArray()
-                            .put(new org.json.JSONObject().put("name","From").put("value",config.recipient))
-                            .put(new org.json.JSONObject().put("name","Subject").put("value","NLL Export")));
-                        String id=localId;
-                        MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id",id).put("internalDate",System.currentTimeMillis()).put("payload",payload),archiveAfterSend,progress);
+                        MailSync.prepareLocalExport(app,config,local,localId,archiveAfterSend,progress);
+                        MailConfig.status(app,"Neuer Exportauftrag gespeichert · Versand wird gestartet …");
                         if(!progress.control.isCancelled())MailSync.runOwned(app,progress);
-                    } catch(Exception e) {MailConfig.status(app,"Export konnte nicht vorbereitet werden.");}
+                    } catch(Exception e) {
+                        String detail=e.getMessage();if(detail==null||detail.isBlank())detail=e.getClass().getSimpleName();
+                        MailConfig.status(app,"Neuer Export konnte nicht erstellt werden: "+detail.substring(0,Math.min(350,detail.length())));
+                    }
                     finally {
                         try {if(progress.control.isCancelled()) {
                             try(Store local=new Store(app)) {new MailStore(local).cancelPending(config.gmail+":"+localId);}
@@ -555,7 +555,7 @@ public class MainActivity extends Activity {
                         } catch(Exception failure){MailConfig.status(app,"Abbruchstatus konnte nicht gespeichert werden. Vor erneutem Versand Mail-Ausgang prüfen.");}
                         finally {MailSync.BUSY.set(false);Backup.request(app);}
                     }
-                    Thread.interrupted();runOnUiThread(() -> {writing=false;progress.dismiss();if(!isDestroyed()) {render();}});
+                    Thread.interrupted();runOnUiThread(() -> {writing=false;progress.dismiss();if(!isDestroyed()) {notice=MailConfig.prefs(this).getString("status","");render();}});
                 },"mail-export").start();
             }).show();
     }

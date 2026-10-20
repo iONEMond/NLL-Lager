@@ -2,6 +2,18 @@
 
 Neueste veröffentlichte APK: **0.7.1**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
+## 0.7.2 – unveröffentlicht
+
+20.10.2026: Entwicklungsstand 0.7.2-dev, Code 16. Betreiber meldet: alter Exportauftrag versendet, neue Exporte über beide Direktversand-Buttons erscheinen nicht unter Letzte Aufträge. Der genaue Fehlertext des Scanners liegt noch nicht vor.
+
+Reproduzierbarer Fehlerfall: Lokale Exportanforderungen wurden als synthetische Eingangsmail durch denselben since-Zeitfilter verarbeitet. Bei einer gespeicherten Abrufgrenze in der Zukunft (z. B. nach korrigierter Geräteuhr) wurde ein neuer lokaler Export still verworfen; anschließende Synchronisation konnte trotzdem als abgeschlossen erscheinen. Dieser Zustand auf dem betroffenen Scanner ist noch nicht bestätigt.
+
+- Eigener Einstieg für ausdrücklich lokal gestartete Exporte, unabhängig von der zeitlichen Eingangsmailgrenze. Absender-/Betreff-/Zeitfilter für echte Eingangsmails bleiben unverändert.
+- Nach der Vorbereitung wird die gespeicherte Auftragskennung geprüft. Doppelte lokale Kennungen führen zu einem Fehler statt zu einem stillen Überspringen.
+- Vorbereitungsfehler werden mit konkreter Ursache im Mailstatus und nach dem Fortschrittsdialog angezeigt. Fehlerhafte lokale Berichte werden nicht als vermeintlich erfolgreich vorbereitete Fehlerantwort versendet. Keine Archivierung bei Vorbereitungsfehler.
+
+Prüfung: 145 lokale Tests ohne Fehler, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Noch keine signierte APK oder Veröffentlichung; Release bleibt 0.7.1. Geräte- und echter Mailtest offen.
+
 ## 0.7.1 – veröffentlicht am 20.10.2026
 
 20.10.2026: Release-Kandidat 0.7.1, Code 15 (nach Entwicklungsstand 14). Betreiber meldet funktionierenden Versand mit 0.6.1 und dauerhaft „Hintergrundverarbeitung läuft“ unter 0.7.0. Nachgewiesen: Anzeige wurde nach Hintergrundabschluss nicht aktualisiert; Hintergrundläufe hatten kein Gesamtzeitlimit. Ein tatsächlich hängender Geräteaufruf ist ohne Gerätediagnose noch nicht nachgewiesen.

@@ -146,6 +146,31 @@ public class MailSyncTest {
         MailConfig updated=new MailConfig(context);
         assertTrue(updated.ready());assertEquals(since,updated.since);
     }
+    @Test public void explicitLocalExportIgnoresFutureInboxCutoffAndSendsNewSnapshot()throws Exception {
+        movement("1");MailConfig.prefs(context).edit().putLong("since",System.currentTimeMillis()+3600000).commit();config=new MailConfig(context);
+        String id="local-"+UUID.randomUUID();String key=MailSync.prepareLocalExport(context,config,store,id,true,WorkProgress.NONE);
+        assertTrue(mail.exists(key));assertEquals("pending",mail.records(config.gmail).get(0)[1]);assertEquals(1,store.count(false));movement("2");
+        FakeClient client=new FakeClient();MailSync.sync(context,config,store,client);assertEquals(1,client.sent.size());assertEquals("archived",mail.records(config.gmail).get(0)[1]);assertEquals(1,store.count(false));assertEquals(1,store.count(true));
+    }
+    @Test public void successiveLocalExportsHaveSeparateVisibleOrdersAndDoNotDuplicateIds()throws Exception {
+        movement("1");String id="local-"+UUID.randomUUID();MailSync.prepareLocalExport(context,config,store,id,false,WorkProgress.NONE);
+        assertThrows(IOException.class,()->MailSync.prepareLocalExport(context,config,store,id,false,WorkProgress.NONE));assertEquals(1,mail.records(config.gmail).size());
+        MailSync.prepareLocalExport(context,config,store,"local-"+UUID.randomUUID(),false,WorkProgress.NONE);assertEquals(2,mail.records(config.gmail).size());
+    }
+    @Test public void failedLocalReportPreparationDoesNotQueueMisleadingSuccessOrErrorMail()throws Exception {
+        movement("1");store.getWritableDatabase().execSQL("UPDATE movements SET timestamp='invalid-date'");
+        assertThrows(java.time.format.DateTimeParseException.class,()->MailSync.prepareLocalExport(context,config,store,"local-"+UUID.randomUUID(),true,WorkProgress.NONE));
+        assertTrue(mail.records(config.gmail).isEmpty());assertEquals(1,store.count(false));assertEquals(0,store.count(true));
+    }
+    @Test public void cancelledExplicitLocalExportDoesNotCreateAnOrder()throws Exception {
+        movement("1");OperationControl token=new OperationControl();token.cancel();
+        assertThrows(OperationControl.Cancelled.class,()->MailSync.prepareLocalExport(context,config,store,"local-"+UUID.randomUUID(),false,token));assertTrue(mail.records(config.gmail).isEmpty());assertEquals(1,store.count(false));
+    }
+    @Test public void incomingDateFilterCanSilentlyDropSyntheticLocalExport()throws Exception {
+        movement("1");MailConfig.prefs(context).edit().putLong("since",System.currentTimeMillis()+3600000).commit();config=new MailConfig(context);
+        MailSync.prepare(context,config,store,null,message("local-date-repro",config.recipient,subject("EXPORT")),false,WorkProgress.NONE);
+        assertTrue(mail.records(config.gmail).isEmpty());
+    }
     @Test public void cancelledPendingReportIsNotSentByNextBackgroundSync()throws Exception {
         movement("1");FakeClient client=new FakeClient();MailSync.prepare(context,config,store,client,message("cancel-pending",config.recipient,subject("EXPORT")),true);
         mail.cancelPending(config.gmail+":cancel-pending");MailSync.sync(context,config,store,client);assertTrue(client.sent.isEmpty());assertEquals("cancelled",mail.records(config.gmail).get(0)[1]);assertEquals(1,store.count(false));

@@ -84,8 +84,24 @@ final class MailSync {
     }
     static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message,boolean autoArchive) throws Exception {prepare(context,config,store,client,message,autoArchive,WorkProgress.NONE);}
     static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message,boolean autoArchive,WorkProgress progress) throws Exception {
+        prepare(context,config,store,client,message,autoArchive,progress,false);
+    }
+    /** Local UI exports are new explicit commands, independent of the inbox receipt cutoff. */
+    static String prepareLocalExport(Context context,MailConfig config,Store store,String id,boolean autoArchive,WorkProgress progress)throws Exception {
+        if(!id.matches("local-[0-9a-f-]{36}"))throw new IOException("Ungültige lokale Exportkennung.");
+        progress.update(0,0,"Neuen Exportauftrag erstellen …");
+        JSONObject payload=new JSONObject().put("headers",new JSONArray()
+            .put(new JSONObject().put("name","From").put("value",config.recipient))
+            .put(new JSONObject().put("name","Subject").put("value","NLL Export")));
+        prepare(context,config,store,null,new JSONObject().put("id",id).put("internalDate",System.currentTimeMillis()).put("payload",payload),autoArchive,progress,true);
+        String key=config.gmail+":"+id;
+        if(!new MailStore(store).exists(key))throw new IOException("Neuer Exportauftrag wurde nicht gespeichert. Es wurde keine Mail versendet.");
+        return key;
+    }
+    private static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message,boolean autoArchive,WorkProgress progress,boolean localExport) throws Exception {
         String id=message.getString("id"),key=config.gmail+":"+id;MailStore mail=new MailStore(store);
-        if(mail.exists(key) || message.optLong("internalDate",0)<config.since) return;
+        if(mail.exists(key)){if(localExport)throw new IOException("Exportauftrag mit dieser Kennung existiert bereits.");return;}
+        if(!localExport && message.optLong("internalDate",0)<config.since)return;
         JSONObject payload=message.getJSONObject("payload");
         if(!config.recipient.equals(MailProtocol.sender(MailProtocol.header(payload,"From")))) return;
         String command=MailProtocol.command(MailProtocol.header(payload,"Subject"));
@@ -128,6 +144,7 @@ final class MailSync {
             } finally {db.endTransaction();}
         } catch(IOException | IllegalArgumentException e) {
             progress.checkCancelled();
+            if(localExport)throw e; // The UI must not report a queued error reply as a successful report.
             // A failed transaction leaves the catalog intact and creates a durable error reply.
             if(!mail.exists(key)) {
                 String reason=e.getMessage();if(reason==null) reason="Datei konnte nicht verarbeitet werden.";

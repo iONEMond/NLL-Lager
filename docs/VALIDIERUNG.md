@@ -1,3 +1,7 @@
+# Entwicklungsstand 0.7.2-dev – 20.10.2026
+
+145 lokale Tests ohne Fehler oder übersprungene Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Reproduktion des alten stillen Überspringens synthetischer lokaler Exporte bei Zukunfts-Abrufgrenze. Neue Tests: expliziter lokaler Export trotz Zukunftsgrenze mit korrekter Snapshot-Archivierung, getrennte Folgeaufträge und Ablehnung gleicher ID, Abbruch ohne Auftrag sowie Fehler bei Berichtserstellung ohne Ersatz-Fehlermail oder Archivierung. Echte Eingangsmailfilter und vorhandene Mail-/Abbruchtests weiterhin erfolgreich. Keine echte Mail, kein Geräte-/Uhrabgleich dieses Stands. Konkrete Scannerursache weiterhin unbestätigt. Keine neue signierte Veröffentlichung.
+
 # Entwicklungsstand 0.7.1-dev – 20.10.2026
 
 Ergänzte Hintergrundkorrektur: 140 lokale Tests ohne Fehler/übersprungene Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Vier zusätzliche Tests prüfen Gesamtzeitlimit mit erhaltener Verarbeitungssperre bis Workerabschluss, gezielten Abbruch ausschließlich des aktiven Maillaufs, automatische Entfernung einer veralteten Hintergrundanzeige und den Abbrechen-Button im Mail-Menü. Der folgende Stand mit 136 Tests dokumentiert die vorhergehende Teilprüfung. Keine neue Hardwareprüfung oder signierte Veröffentlichung.
