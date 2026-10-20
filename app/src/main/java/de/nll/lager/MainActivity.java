@@ -46,6 +46,13 @@ public class MainActivity extends Activity {
         if(operationProgress!=null) operationProgress.dismiss();
         return operationProgress=new OperationProgress(this,title,message);
     }
+    private final android.os.Handler mailRefresh=new android.os.Handler(android.os.Looper.getMainLooper());
+    private String mailViewState="";
+    private String mailState(){return MailSync.BUSY.get()+"|"+MailSync.currentPhase()+"|"+MailConfig.prefs(this).getString("status","");}
+    private final Runnable refreshMailState=new Runnable(){@Override public void run(){
+        if(isDestroyed()||isFinishing()||!adminUnlocked||!"mail".equals(screen)||writing)return;
+        if(!mailViewState.equals(mailState()))render();else mailRefresh.postDelayed(this,1000);
+    }};
     private SharedPreferences prefs;
     private AppUpdate.Release updateRelease;
     private java.io.File updateFile;
@@ -100,6 +107,7 @@ public class MainActivity extends Activity {
         return d;
     }
     private void base(String title, String subtitle) {
+        mailRefresh.removeCallbacks(refreshMailState);
         from = null; to = null; movementKind=null; amount = null; scan = null;
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setFitsSystemWindows(true);
         body = new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(16), dp(16), dp(16), dp(24));
@@ -429,7 +437,11 @@ public class MainActivity extends Activity {
         }
         if(MailSync.BUSY.get() && !writing) {
             ProgressBar background=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);background.setIndeterminate(true);background.setContentDescription("Synchronisierung läuft im Hintergrund");body.addView(background);
-            text("Hintergrundverarbeitung läuft …",16,MUTED);
+            text(MailSync.currentPhase(),16,MUTED);
+            if(MailSync.canCancel())button("Laufende Mailverarbeitung abbrechen",false,() -> {
+                if(!requireAdmin())return;
+                notice=MailSync.cancelActive() ? "Abbruch angefordert · Abschluss abwarten" : "Mailvorgang bereits beendet";render();
+            });
         }
         if(config.ready()) {
             button("Jetzt synchronisieren",true,this::syncMail);
@@ -443,6 +455,7 @@ public class MainActivity extends Activity {
             if(!requireAdmin() || mailBusy()) return;
             MailConfig.prefs(this).edit().putBoolean("connected",false).apply();MailJobService.schedule(this);render();
         });
+        mailViewState=mailState();mailRefresh.postDelayed(refreshMailState,1000);
         text("Letzte Aufträge",20,INK);
         for(String[] record:new MailStore(store).records(config.gmail)) {
             String state=record[1];
@@ -580,6 +593,7 @@ public class MainActivity extends Activity {
         }
     }
     @Override protected void onStop() {
+        mailRefresh.removeCallbacks(refreshMailState);
         captureDraft();
         if(!pickerOpen && !writing) adminUnlocked=false;
         super.onStop();
@@ -1108,6 +1122,7 @@ public class MainActivity extends Activity {
     }
     private static class ArchiveException extends Exception { private static final long serialVersionUID=1L; }
     @Override protected void onDestroy() {
+        mailRefresh.removeCallbacks(refreshMailState);
         if(operationProgress!=null) operationProgress.detach();
         if (store != null && !writing) store.close();
         super.onDestroy();

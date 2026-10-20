@@ -4,12 +4,16 @@ package de.nll.lager;
 final class OperationControl implements WorkProgress {
     static final class Cancelled extends RuntimeException {Cancelled(){super("Vorgang abgebrochen.");}}
     private boolean cancelled,sealed;
+    private String phase="Mailverarbeitung startet …";
+    volatile boolean timedOut;
     private Runnable network;
     private Thread worker;
-    @Override public void update(int done,int total,String message){synchronized(this){worker=Thread.currentThread();}checkCancelled();}
+    @Override public void update(int done,int total,String message){synchronized(this){worker=Thread.currentThread();phase=message;}checkCancelled();}
     @Override public synchronized void checkCancelled(){if(cancelled)throw new Cancelled();}
     @Override public synchronized void completeCancellation(){checkCancelled();sealed=true;network=null;}
     @Override public synchronized void onCancel(Runnable action){checkCancelled();network=action;}
+    synchronized String phase(){return phase;}
+    synchronized void timeout(){if(!cancelled&&!sealed){timedOut=true;cancel();}}
     synchronized boolean isCancelled(){return cancelled;}
     synchronized boolean isSealed(){return sealed;}
     boolean cancel(){

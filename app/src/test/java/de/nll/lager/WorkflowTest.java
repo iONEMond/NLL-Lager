@@ -151,6 +151,22 @@ public class WorkflowTest {
         assertEquals("kg",((EditText)find(d.getWindow().getDecorView(),"Einheit (z. B. Stk oder kg)",true)).getText().toString());
         d.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();assertFalse(isUnlocked());assertNull(db.material("KMNEW"));
     }
+    @Test public void backgroundIndicatorRefreshesAfterCompletionWithoutLeavingMenu()throws Exception {
+        unlockForTest();MailSync.BUSY.set(true);
+        try{
+            java.lang.reflect.Method menu=MainActivity.class.getDeclaredMethod("mailMenu");menu.setAccessible(true);menu.invoke(activity);
+            assertNotNull(find(activity.getWindow().getDecorView(),"Synchronisierung läuft im Hintergrund",true));
+            MailSync.BUSY.set(false);org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(1));
+            assertNull(find(activity.getWindow().getDecorView(),"Synchronisierung läuft im Hintergrund",true));
+        }finally{MailSync.BUSY.set(false);}
+    }
+    @Test public void activeBackgroundMailCanBeCancelledFromMenu()throws Exception {
+        unlockForTest();OperationControl token=new OperationControl();MailSync.BUSY.set(true);
+        try(MailSync.RunGuard guard=new MailSync.RunGuard(token,120000)){
+            java.lang.reflect.Method menu=MainActivity.class.getDeclaredMethod("mailMenu");menu.setAccessible(true);menu.invoke(activity);
+            press("Laufende Mailverarbeitung abbrechen");assertTrue(token.isCancelled());assertTrue(MailSync.BUSY.get());
+        }finally{MailSync.BUSY.set(false);}
+    }
     @Test public void exportChooserOffersSharingAndDirectMailForOpenReport() throws Exception {
         db.book(db.material("00123"),"A","B","1",db.person("0007"));
         unlockForTest();java.lang.reflect.Method export=MainActivity.class.getDeclaredMethod("beginExport",boolean.class);export.setAccessible(true);export.invoke(activity,false);

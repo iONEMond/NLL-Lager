@@ -176,3 +176,9 @@ SharedReport schreibt unveränderliche XLSX nach files/shared-reports, ReportFil
 Derzeit keine neue signierte Release-APK, kein weiterer Geräte-/Mailtest. Öffentlicher Release weiterhin v0.7.0.
 
 Prüfstand 0.7.1-dev: 136 lokale Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Vorschau-APK lokal NLL-Lager-0.7.1-dev-vorschau.apk im übergeordneten Projektordner; eigene Vorschau-Daten, kein Update der Haupt-App.
+
+Ergänzung nach Scanner-Rückmeldung: 0.6.1 funktionierte laut Betreiber, unter 0.7.0 dauerhaft „Hintergrundverarbeitung läuft“. Das ist eine BUSY-Anzeige, kein Nachweis für abgelehnte Google-Authentifizierung. Vergleich der veröffentlichten MailSync-Versionen: Google-Autorisierung/SHA-Zuordnung wurde nicht neu umgestellt; beide besaßen kein Gesamtzeitlimit. Die Hintergrundanzeige kam mit der Fortschrittsänderung hinzu und blieb nach Workerabschluss ohne erneutes Rendern sichtbar. Tatsächliche Ursache eines möglicherweise noch blockierten Workers auf Hardware bleibt offen.
+
+Korrektur: MailSync.RunGuard registriert den aktiven Mail-Cancellation-Token, begrenzt automatische Läufe auf 120 Sekunden und entfernt Referenz/Timer beim Verlassen. BUSY wird weiterhin ausschließlich vom Besitzer nach Workerabschluss freigegeben; Abbruch setzt es niemals blind zurück. Mail-Menü zeigt Phase und bietet nur für registrierte Mailläufe Abbrechen (keinen Abbruch fremder Import-/Restore-Sperren). Handler aktualisiert Menü nur bei geänderten Werten, beendet Beobachtung beim Verlassen/Stop/Destroy. MailJobService.onStopJob bricht eigenen Token statt einen möglicherweise fremden Lauf ab; unterdrückt jobFinished nach Jobabbruch.
+
+Aktueller Prüfstand einschließlich Hintergrundkorrektur: 140 lokale Tests ohne Fehler, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Lokale Vorschau-APK erneut aktualisiert. Kein neuer Honeywell-/Google-Mailtest; öffentlicher Release unverändert v0.7.0.

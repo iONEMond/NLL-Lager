@@ -14,26 +14,44 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class MailSync {
     static final AtomicBoolean BUSY=new AtomicBoolean();
-    static boolean run(Context context) {return run(context,WorkProgress.NONE);}
+    private static volatile OperationControl active;
+    static String currentPhase(){OperationControl c=active;return c==null ? "Hintergrundverarbeitung läuft …" : c.isCancelled() ? "Abbruch angefordert · Abschluss abwarten …" : c.phase();}
+    static boolean canCancel(){return active!=null;}
+    static boolean cancelActive(){OperationControl c=active;return c!=null && c.cancel();}
+    /** Never releases BUSY early: cancellation must first unwind network and transactions. */
+    static final class RunGuard implements AutoCloseable {
+        final OperationControl control;
+        final Timer timer;
+        RunGuard(WorkProgress progress,long timeoutMillis){
+            control=progress instanceof OperationProgress ? ((OperationProgress)progress).control : progress instanceof OperationControl ? (OperationControl)progress : null;
+            active=control;
+            if(control!=null && progress instanceof OperationControl){timer=new Timer("background-mail-timeout",true);timer.schedule(new TimerTask(){@Override public void run(){control.timeout();}},timeoutMillis);}else timer=null;
+        }
+        @Override public void close(){if(timer!=null)timer.cancel();if(active==control)active=null;}
+    }
+    static boolean run(Context context) {return run(context,new OperationControl());}
     static boolean run(Context context,WorkProgress progress) {
+        if(progress==WorkProgress.NONE)progress=new OperationControl();
         if(!BUSY.compareAndSet(false,true)) return false;
         try{return runOwned(context,progress);}finally{BUSY.set(false);Backup.request(context);}
     }
     /** Caller holds BUSY throughout preparation, cancellation and transmission. */
     static boolean runOwned(Context context,WorkProgress progress) {
         MailConfig config=new MailConfig(context);
-        try(Store store=new Store(context)) {
+        try(RunGuard guard=new RunGuard(progress,120000);Store store=new Store(context)) {
             progress.update(0,0,"Google-Verbindung herstellen …");
             if(!config.ready()) return false;
             MailStore mail=new MailStore(store);mail.recoverInterrupted();
             AuthorizationResult auth=Tasks.await(Identity.getAuthorizationClient(context).authorize(config.request()),45,TimeUnit.SECONDS);
             if(auth.hasResolution() || auth.getAccessToken()==null || !auth.getGrantedScopes().containsAll(Arrays.asList(MailConfig.READ,MailConfig.SEND))) throw new IOException("Gmail-Freigabe erforderlich. Im geschützten Mail-Menü erneut verbinden.");
+            progress.update(0,0,"Google-Freigabe erhalten · Gmail-Postfach prüfen …");
             GmailClient client=new GmailClient(auth.getAccessToken(),progress);
             if(!config.gmail.equalsIgnoreCase(client.call("profile",null).getString("emailAddress"))) throw new IOException("Falsches Google-Konto ausgewählt.");
             sync(context,config,store,client,progress);
             MailConfig.status(context,"Synchronisierung abgeschlossen. Auftragsstatus unten prüfen.");return true;
         } catch(Exception e) {
-            MailConfig.status(context,e instanceof OperationControl.Cancelled || Thread.currentThread().isInterrupted() ? "Synchronisierung abgebrochen. Bereits abgeschlossene Aufträge bleiben erhalten; Mailstatus prüfen." : e instanceof IOException ? e.getMessage() : "Gmail-Verbindung fehlgeschlagen. Internet, Google-Einrichtung und Kontofreigabe prüfen.");return false;
+            boolean timeout=progress instanceof OperationControl && ((OperationControl)progress).timedOut;
+            MailConfig.status(context,timeout ? "Mail-Zeitlimit von 2 Minuten erreicht. Bereits abgeschlossene Aufträge bleiben erhalten; Versandstatus prüfen." : e instanceof OperationControl.Cancelled || Thread.currentThread().isInterrupted() ? "Synchronisierung abgebrochen. Bereits abgeschlossene Aufträge bleiben erhalten; Mailstatus prüfen." : e instanceof IOException ? e.getMessage() : "Gmail-Verbindung fehlgeschlagen. Internet, Google-Einrichtung und Kontofreigabe prüfen.");return false;
         } finally {Thread.interrupted();}
     }
     static void sync(Context context,MailConfig config,Store store,GmailClient client) throws Exception {sync(context,config,store,client,WorkProgress.NONE);}

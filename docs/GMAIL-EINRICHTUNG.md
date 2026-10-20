@@ -67,3 +67,9 @@ Ab Entwicklungsstand 0.6.1-dev wird auch die Firmenliste mit Title und Code erka
 JobScheduler fragt bei erlaubtem Netzwerk frühestens ungefähr alle 15 Minuten ab; Android, Energiesparen, Profilpause und fehlendes Netz können die Ausführung verzögern. Bei vollständig gestoppter App muss sie wieder geöffnet werden. Kein Echtzeitversprechen. **Automatischen Mailzugriff deaktivieren** beendet weitere App-Abrufe; eine bereits bei Google erteilte Freigabe kann separat im Google-Konto widerrufen werden.
 
 Noch erforderlich: Personenimport und Aktualisierung vorhandener Einträge per echter Mail, Export mit Bewegungen und separater Abschluss am Gerät sowie Hintergrund-/Neustarttest auf dem Honeywell. Google-/Mailanbieter können Versand oder Anhänge zusätzlich filtern. Diese Punkte bleiben für den ersten Gerätetest ausdrücklich offen.
+
+## Fehlersuche: „Hintergrundverarbeitung läuft“ in 0.7.0
+
+Die Anzeige bedeutet eine aktive Verarbeitungssperre zum Zeitpunkt des Bildschirmaufbaus. In 0.7.0 kann sie nach abgeschlossenem Hintergrundlauf veraltet stehen bleiben: Menü verlassen und neu öffnen. Falls die manuellen Aktionen weiterhin „Bitte kurz warten“ melden, ist die Sperre noch aktiv. Die Meldung allein belegt keinen Google-Verbindungsfehler. App nicht deinstallieren oder Daten löschen. Stopp erzwingen beendet den Prozess und die laufende Sperre; automatischer Abruf kann beim nächsten Start erneut beginnen.
+
+Unveröffentlichte Korrektur 0.7.1-dev: Hintergrundstatus aktualisiert sich selbst, aktueller Arbeitsschritt wird angezeigt, registrierte Mailläufe lassen sich abbrechen und haben ein Gesamtzeitlimit von zwei Minuten. Sperre erst nach Workerabschluss freigeben; bei unterbrochener Mailübertragung unklaren Status prüfen, keine automatische Wiederholung.

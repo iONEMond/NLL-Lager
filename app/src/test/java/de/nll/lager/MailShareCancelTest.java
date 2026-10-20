@@ -41,6 +41,18 @@ public class MailShareCancelTest {
         try(android.os.ParcelFileDescriptor fd=provider.openFile(uri,"r")){assertTrue(fd.getStatSize()>0);}
         assertThrows(java.io.FileNotFoundException.class,()->provider.openFile(uri,"w"));assertThrows(java.io.FileNotFoundException.class,()->provider.openFile(android.net.Uri.parse("content://test/../nll-lager.db"),"r"));
     }
+    @Test public void backgroundDeadlineCancelsButKeepsProcessingLockUntilWorkerExits()throws Exception {
+        OperationControl token=new OperationControl();java.util.concurrent.CountDownLatch cancelled=new java.util.concurrent.CountDownLatch(1);token.onCancel(cancelled::countDown);MailSync.BUSY.set(true);
+        try(MailSync.RunGuard guard=new MailSync.RunGuard(token,20)){
+            assertTrue(MailSync.canCancel());assertTrue(cancelled.await(2,java.util.concurrent.TimeUnit.SECONDS));assertTrue(token.timedOut);assertTrue(token.isCancelled());assertTrue(MailSync.BUSY.get());
+        }finally{MailSync.BUSY.set(false);}
+        assertFalse(MailSync.canCancel());
+    }
+    @Test public void backgroundCancellationTargetsActiveMailAndDoesNotReleaseUnrelatedLock(){
+        OperationControl token=new OperationControl();MailSync.BUSY.set(true);
+        try(MailSync.RunGuard guard=new MailSync.RunGuard(token,120000)){assertTrue(MailSync.cancelActive());assertTrue(token.isCancelled());assertTrue(MailSync.BUSY.get());}
+        assertFalse(MailSync.cancelActive());assertTrue(MailSync.BUSY.get());MailSync.BUSY.set(false);
+    }
     @Test public void timeoutRemainsActiveWhenProgressViewIsDetached()throws Exception {
         android.app.Activity activity=Robolectric.buildActivity(android.app.Activity.class).setup().get();OperationProgress progress=new OperationProgress(activity,"Test","Warten");
         java.util.concurrent.CountDownLatch cancelled=new java.util.concurrent.CountDownLatch(1);progress.onCancel(cancelled::countDown);progress.timeoutAfter(10);progress.detach();
