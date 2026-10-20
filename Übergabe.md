@@ -13,11 +13,11 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | Version | Bedeutung |
 | --- | --- |
 | 0.5.0, Code 6 | Signierter Release; Betreiber meldete am 20.10.2026 erfolgreichen Gerätetest. Keine einzelnen Prüfschritte genannt. |
-| 0.6.0, Code 8 | Neuester veröffentlichter GitHub-Release `v0.6.0`. Gmail und weitere Bedienabläufe. Noch keine umfassende Honeywell-Bestätigung. |
+| 0.6.0, Code 8 | Vorheriger GitHub-Release `v0.6.0`. Gmail und weitere Bedienabläufe. Noch keine umfassende Honeywell-Bestätigung. |
 | 0.6.1-dev, Code 9 | Früherer lokaler Entwicklungsstand, keine stabile Veröffentlichung. |
-| 0.6.1, Code 10 | Aktueller Quellstand, **signiert und geprüft, noch nicht veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
+| 0.6.1, Code 10 | Aktueller Quellstand, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
 
-Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Die Veröffentlichung ist noch ausstehend. Passwörter weiterhin unbekannt und nicht gespeichert.
+Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
 
 Letzter funktionaler Prüfstand: 97 lokale Tests, Release-Build und Release-Lint erfolgreich, einschließlich nachträglicher About-Ergänzung. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
 
@@ -135,7 +135,7 @@ Zwei Emulatoren waren vorhanden: „Medium Phone API 37.0“ mit älteren Instal
 
 ## Nächste Aufgaben und bekannte Grenzen
 
-1. Signierte und geprüfte 0.6.1 als stabilen Release veröffentlichen und Download anonym prüfen. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Keine Fertigmeldung vor erfolgreichem Asset-Upload.
+1. Veröffentlichung 0.6.1 abgeschlossen: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1. APK und SHA256SUMS hochgeladen; anonymer Download und vollständige Signaturprüfung erfolgreich. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Nächster Schritt ist der Honeywell-Test.
 2. Auf Honeywell Update von 0.5.0 mit Datenerhalt, Scanner-Eingabe, Passwortschutz und unbekannte Artikel testen.
 3. Echte Firmen-XLSX statt Foto prüfen; neues Berichtslayout und Pflichtbewegungsart mit Betreiber bestätigen.
 4. Sicherungsordner, Wiederherstellung, Android-Installationsfreigabe und späteres In-App-Update auf echter Hardware testen.

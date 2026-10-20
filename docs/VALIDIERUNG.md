@@ -1,3 +1,7 @@
+# Veröffentlichung 0.6.1 – 20.10.2026
+
+Stabiler GitHub-Release v0.6.1 über Safari veröffentlicht (kein Entwurf/Pre-Release), genau eine APK sowie SHA256SUMS. Anonyme HTTPS-Abfrage von releases/latest liefert v0.6.1. APK erneut ohne Zugangsdaten heruntergeladen: 2.423.836 Bytes, SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31; identisch mit lokal signierter APK und GitHub-Digest. SHA256SUMS-Digest ebenfalls abgeglichen. Heruntergeladene APK mit apksigner erneut erfolgreich gegen vorhandenes Release-Zertifikat geprüft. Keine neue Geräteinstallation oder Mailprüfung durchgeführt. [Release](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1). Frühere Abschnitte sind historische Prüfstände.
+
 # Signierte APK 0.6.1 – 20.10.2026
 
 Android Studio meldet erfolgreichen signierten Release-Build nach lokaler Passworteingabe des Betreibers. apksigner verify --print-certs erfolgreich; bestehendes Release-Zertifikat SHA-256 1d70da7786708b6dcd04319235fc76ca4d411f12474a63bc98852fc9b5fa25c0. aapt: de.nll.lager, versionName 0.6.1, versionCode 10, minSdk 26, targetSdk 35. APK 2.423.836 Bytes; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31. Lokale Kopien im Projektordner und downloads/; keine erneuten Geräte- oder Mailtests. Release-Upload und externe Downloadprüfung noch offen.

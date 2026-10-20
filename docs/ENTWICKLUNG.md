@@ -48,7 +48,7 @@ Der Release-Build aus der Kommandozeile ist ohne Signierkonfiguration **unsignie
 6. Code, Dokumentation und `downloads/SHA256SUMS` abgleichen. Stabile Veröffentlichung mit Tag `vX.Y.Z` und genau einem Asset `NLL-Lager-X.Y.Z-release.apk` sowie `SHA256SUMS` erstellen. Keine unsignierten oder Vorschau-APKs als Haupt-Release hochladen.
 7. Release-Asset anonym erneut lesen: URL, Größe, Version und GitHub-`digest` müssen zur APK passen. Der Updater verlangt das Digest-Feld. Erst dann README/CHANGELOG als veröffentlicht kennzeichnen.
 
-Vollständige Updatebedingungen stehen in [UPDATES.md](UPDATES.md). Schlüssel niemals ersetzen, um ein fehlendes Passwort zu umgehen. 0.6.1 wurde nach erneuter lokaler Passworteingabe signiert und geprüft; die Veröffentlichung steht noch aus.
+Vollständige Updatebedingungen stehen in [UPDATES.md](UPDATES.md). Schlüssel niemals ersetzen, um ein fehlendes Passwort zu umgehen. 0.6.1 wurde nach erneuter lokaler Passworteingabe signiert, geprüft und als stabiler Release veröffentlicht.
 
 ## Dokumentationspflege
 

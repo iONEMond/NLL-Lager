@@ -1,6 +1,6 @@
 # Sicherung und Wiederherstellung
 
-Für Release 0.6.1 (versionCode 10) vorbereitet, noch nicht veröffentlicht und nicht in Release 0.6.0 enthalten.
+Ab Release 0.6.1 (versionCode 10) verfügbar; nicht in den älteren Releases 0.5.0/0.6.0 enthalten.
 
 ## Einrichten
 

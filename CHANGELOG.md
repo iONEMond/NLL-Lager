@@ -1,16 +1,18 @@
 # Versionshistorie
 
-Neueste veröffentlichte APK: **0.6.0**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
+Neueste veröffentlichte APK: **0.6.1**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
 ## Repository-Pflege – 20.10.2026
 
 README auf Projektstatus, Installation und Navigation reduziert; Bedienung, Entwicklung und bestehende Anleitungen unter `docs/` gebündelt. `Übergabe.md` dokumentiert Architektur, Betriebsentscheidungen, Release-/Signierablauf, Daten- und Mailbesonderheiten sowie offene Tests für Nachfolge-Agenten. Projektregeln verweisen auf die Übergabe. Historische APKs mit ihrem Zweck dokumentiert und als Testdateien/Altlinks erhalten. Neue Build-Artefakte und lokale Altunterlagen ausgeschlossen. Relative Markdown-Dateilinks werden mit `tools/check_docs.py` geprüft. Keine fachliche Verhaltensänderung; Release 0.6.1 bleibt unsigniert und unveröffentlicht.
 
-## 0.6.1 – signiert, Veröffentlichung vorbereitet
+## 0.6.1 – 20.10.2026
+
+**Veröffentlicht:** Version 0.6.1, versionCode 10, bestehender Release-Schlüssel. [Release und signierte APK](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1). Veröffentlichung über Safari; GitHub liefert v0.6.1 als neuesten stabilen Release. Öffentliche APK anonym erneut heruntergeladen, Größe und SHA-256 gegen lokale APK und GitHub-Digest geprüft, APK-Signatur erneut erfolgreich geprüft. Neue Funktionen auf Honeywell noch zu testen. Nachfolgende Vorbereitungsnotizen dokumentieren den zeitlichen Verlauf.
 
 20.10.2026: Betreiber hat die Schlüsselpasswörter erneut lokal eingegeben. APK mit bestehendem Release-Schlüssel signiert; apksigner erfolgreich, Paket de.nll.lager, Version 0.6.1, versionCode 10 und Mindest-API 26 geprüft. Größe 2.423.836 Bytes, SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31. Release-Upload und anonyme Downloadprüfung stehen noch aus. Frühere Vorbereitungsnotizen bleiben als Verlauf erhalten.
 
-„Über die App (About)“ im geschützten Einstellungsmenü ergänzt: installierte Version und Buildnummer direkt aus den Android-Paketdaten, Haupt-App/Vorschau, Paketname, Android-/API-Version, Datenbankversion sowie Hinweise zu Offline-Betrieb, Speicherung, Sicherung, Gmail, Updates und Projektanleitungen. Zurück-Pfeil und automatische Einstellungssperre gelten auch hier. Teil des noch nicht signierten Release-Kandidaten 0.6.1.
+„Über die App (About)“ im geschützten Einstellungsmenü ergänzt: installierte Version und Buildnummer direkt aus den Android-Paketdaten, Haupt-App/Vorschau, Paketname, Android-/API-Version, Datenbankversion sowie Hinweise zu Offline-Betrieb, Speicherung, Sicherung, Gmail, Updates und Projektanleitungen. Zurück-Pfeil und automatische Einstellungssperre gelten auch hier. In Release 0.6.1 enthalten.
 
 20.10.2026: Release-Kandidat 0.6.1 mit versionCode 10 vorbereitet (höher als Entwicklungsstand 9). Signierung mit bestehendem Release-Schlüssel steht aus: Android Studio benötigt die nicht gespeicherten Schlüsselpasswörter erneut. Keine signierte 0.6.1 zum Download veröffentlicht; aktuell bleibt 0.6.0 der neueste Release.
 

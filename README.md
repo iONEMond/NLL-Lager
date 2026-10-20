@@ -7,18 +7,18 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | Stand | Status |
 | --- | --- |
 | **0.5.0** | Vom Betreiber auf dem Gerät erfolgreich getestet |
-| **0.6.0 · Build 8** | Neuester veröffentlichter Release; ergänzt Gmail |
-| **0.6.1 · Build 10** | Signiert und geprüft, noch **nicht veröffentlicht** |
+| **0.6.0 · Build 8** | Vorheriger Release; ergänzt Gmail |
+| **0.6.1 · Build 10** | **Neuester veröffentlichter Release** |
 
-0.6.1 ergänzt Firmenlisten-Import, das neue Exportformat, Bewegungsarten, vollständige Sicherung/Wiederherstellung, GitHub-Updates und ein About-Menü. Lokale Prüfungen: 97 Tests, Release-Build und Release-Lint erfolgreich. Tests der neuen Abläufe auf dem Honeywell stehen aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
+[Release 0.6.1](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1) ergänzt Firmenlisten-Import, das neue Exportformat, Bewegungsarten, vollständige Sicherung/Wiederherstellung, GitHub-Updates und ein About-Menü. Lokale Prüfungen: 97 Tests, Release-Build und Release-Lint erfolgreich. Tests der neuen Abläufe auf dem Honeywell stehen aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 
 ## Installation
 
-**[Signierte APK 0.6.0 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.6.0/NLL-Lager-0.6.0-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.0) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
+**[Signierte APK 0.6.1 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.6.1/NLL-Lager-0.6.1-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
 
 Die Haupt-App verwendet `de.nll.lager`. Ein Update von der signierten 0.5.0 erhält die App-Daten; die App dazu nicht deinstallieren. Die Vorschau verwendet `de.nll.lager.preview` mit eigenen Daten. Alte Installationen mit einem anderen Signierschlüssel lassen sich nicht direkt aktualisieren.
 
-Der Updater ist erst für 0.6.1 vorbereitet. Diese Version muss nach Veröffentlichung einmal manuell installiert werden; anschließend sind spätere Updates über die App möglich.
+Der Updater ist ab 0.6.1 enthalten. Von 0.5.0 oder 0.6.0 zunächst diese Version einmal manuell installieren; anschließend sind spätere Updates über die App möglich. Unter „Sicherung & Wiederherstellung“ einen Sicherungsordner einrichten.
 
 ## Funktionen
 
@@ -26,7 +26,7 @@ Der Updater ist erst für 0.6.1 vorbereitet. Diese Version muss nach Veröffentl
 - Material- und Kältemittelbewegungen mit Menge, Von-/Nach-Lager und Mitarbeiterzuordnung.
 - Passwortgeschützte Einstellungen für Stammdaten, Import, Export und Archiv.
 - Excel-/CSV-Berichte, optionale Gmail-Anbindung für Listen und Exporte.
-- Für 0.6.1 vorbereitet: Sicherungsordner, Wiederherstellung und geprüfte GitHub-Updates.
+- Ab 0.6.1: Sicherungsordner, Wiederherstellung und geprüfte GitHub-Updates.
 
 Die App erfasst Bewegungen; sie berechnet keine Lagerbestände. Sie arbeitet im privaten Scanner-Profil ohne Verbindung zum Intune-Arbeitsprofil.
 

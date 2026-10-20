@@ -1,6 +1,6 @@
 # App-Updates über GitHub
 
-Für Release 0.6.1 (versionCode 10) vorbereitet, bereits signiert und geprüft, noch nicht veröffentlicht und nicht im veröffentlichten Release 0.6.0 enthalten. Die erste Version mit Updater muss einmal manuell auf dem Gerät installiert werden. Danach können neuere Versionen über den Button installiert werden.
+Ab Release 0.6.1 (versionCode 10) verfügbar; ältere Releases 0.5.0/0.6.0 enthalten den Updater noch nicht. Die erste Version mit Updater muss einmal manuell auf dem Gerät installiert werden. Danach können neuere Versionen über den Button installiert werden.
 
 ## Bedienung
 
