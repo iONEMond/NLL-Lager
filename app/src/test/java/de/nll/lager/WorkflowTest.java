@@ -107,6 +107,20 @@ public class WorkflowTest {
         unlockForTest();invoke("backupMenu",new Class<?>[]{});assertNotNull(find(activity.getWindow().getDecorView(),"Sicherung wiederherstellen",false));
         activity.onActivityResult(105,android.app.Activity.RESULT_CANCELED,null);assertNotNull(db.material("00123"));assertNotNull(db.person("0007"));
     }
+    @Test public void updaterIsProtectedAndPreviewCannotStartInstallation() throws Exception {
+        invoke("updateMenu",new Class<?>[]{});assertNull(find(activity.getWindow().getDecorView(),"Nach Updates suchen",false));
+        unlockForTest();invoke("updateMenu",new Class<?>[]{});
+        assertNull(find(activity.getWindow().getDecorView(),"Sichern & Update installieren",false));
+        assertNull(org.robolectric.Shadows.shadowOf(activity).getNextStartedActivity());
+    }
+    @Test public void updateInstallationRequiresBackupFolderBeforeAndroidInstaller() throws Exception {
+        Backup.prefs(activity).edit().clear().commit();unlockForTest();
+        java.lang.reflect.Field release=MainActivity.class.getDeclaredField("updateRelease");release.setAccessible(true);release.set(activity,new AppUpdate.Release("9.0.0","","https://github.com/iONEMond/NLL-Lager/releases/download/v9.0.0/NLL-Lager-9.0.0-release.apk","",1));
+        java.lang.reflect.Field file=MainActivity.class.getDeclaredField("updateFile");file.setAccessible(true);file.set(activity,new java.io.File("unused.apk"));
+        invoke("installAppUpdate",new Class<?>[]{});
+        assertEquals("Sicherung einrichten",ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());
+        assertNull(org.robolectric.Shadows.shadowOf(activity).getNextStartedActivity());
+    }
     @Test public void updatedEmployeeWarehouseAppliesToNextArticleSelection() {
         scan("Personencode","0007");db.assignLocation("0007","NEU",true);press("Material");scan("Suchen oder Code scannen","00123");
         android.widget.Spinner target=(android.widget.Spinner)find(activity.getWindow().getDecorView(),"Nach Lager",true);

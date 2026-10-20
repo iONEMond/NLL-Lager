@@ -29,7 +29,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public class MainActivity extends Activity {
-    private static final int EXPORT = 101, IMPORT = 102, MAIL_AUTH = 103, BACKUP_FOLDER=104, BACKUP_RESTORE=105;
+    private static final int EXPORT = 101, IMPORT = 102, MAIL_AUTH = 103, BACKUP_FOLDER=104, BACKUP_RESTORE=105, UPDATE_PERMISSION=106, UPDATE_INSTALL=107;
     private static final int INK = Color.rgb(50,49,48), BLUE = Color.rgb(0,120,212), MUTED = Color.rgb(96,94,92);
     private Store store;
     private Store.Person person;
@@ -40,6 +40,8 @@ public class MainActivity extends Activity {
     private AdminSettings settings;
     private boolean adminUnlocked;
     private SharedPreferences prefs;
+    private AppUpdate.Release updateRelease;
+    private java.io.File updateFile;
     private String screen = "login", notice = "", module = "Material", searchQuery = "";
     private long exportCutoff;
     private boolean exportArchive, pickerOpen, writing, importPeople, exportExcel;
@@ -61,7 +63,7 @@ public class MainActivity extends Activity {
             draftAmount = state.getString("amount", "1"); draftScan = state.getString("scan", "");
         }
         render();
-        MailJobService.schedule(this);Backup.request(this);
+        MailJobService.schedule(this);Backup.request(this);AppUpdate.cleanup(this);
         if(new MailConfig(this).ready() && new MailConfig(this).automatic) new Thread(() -> MailSync.run(getApplicationContext()),"mail-start").start();
     }
     @Override protected void onSaveInstanceState(Bundle state) {
@@ -166,6 +168,7 @@ public class MainActivity extends Activity {
             case "settings": settingsMenu(); break;
             case "mail": mailMenu(); break;
             case "backup": backupMenu(); break;
+            case "updates": updateMenu(); break;
             case "locations": locationMenu(); break;
             case "home": home(); break;
             case "browse": browse(); break;
@@ -194,7 +197,7 @@ public class MainActivity extends Activity {
         } catch (IllegalArgumentException e) { error(e.getMessage()); }
     }
     private boolean isAdminScreen() {
-        return java.util.Arrays.asList("settings","locations","materials","people","history","archive","mail","backup").contains(screen);
+        return java.util.Arrays.asList("settings","locations","materials","people","history","archive","mail","backup","updates").contains(screen);
     }
     private boolean requireAdmin() {
         if(adminUnlocked) return true;
@@ -242,8 +245,88 @@ public class MainActivity extends Activity {
         button("Bewegungen & Archiv",false,() -> {screen="history"; render();});
         button("Mail & Synchronisierung",false,() -> {screen="mail";render();});
         button("Sicherung & Wiederherstellung",false,() -> {screen="backup";render();});
+        button("App aktualisieren",false,() -> {screen="updates";render();});
         button("Passwort ändern",false,() -> passwordDialog(true));
         button("Einstellungen sperren",false,this::lockSettings);
+    }
+    private void updateMenu() {
+        if(!requireAdmin()) return;
+        screen="updates";base("App aktualisieren","Signierte Updates direkt von GitHub");
+        String version="unbekannt";
+        try {android.content.pm.PackageInfo current=AppUpdate.installed(this);version=current.versionName+" ("+AppUpdate.code(current)+")";} catch(Exception ignored) {}
+        text("Installiert: "+version,18,INK);
+        text("Quelle: github.com/"+AppUpdate.REPO+" · stabile Releases. Vor Installation werden Version, Prüfsumme und Release-Signatur geprüft und eine vollständige Sicherung im gewählten Sicherungsordner erstellt. Android fragt anschließend nach deiner Installationsbestätigung.",16,MUTED);
+        if(!AppUpdate.PACKAGE.equals(getPackageName())) {text("In der Vorschau-App ist die Updateinstallation deaktiviert. Bitte die signierte Haupt-App verwenden.",17,INK);return;}
+        button("Nach Updates suchen",true,this::checkAppUpdate);
+        if(updateRelease!=null) {
+            text("Verfügbar: "+updateRelease.version+" · "+String.format(Locale.GERMANY,"%.1f MB",updateRelease.size/1048576d),20,INK);
+            text(updateRelease.notes,16,INK);
+            if(updateFile==null) button("Update herunterladen",true,this::downloadAppUpdate);
+            else button("Sichern & Update installieren",true,this::installAppUpdate);
+        }
+    }
+    private void checkAppUpdate() {
+        if(!requireAdmin()) return;
+        writing=true;
+        AlertDialog progress=new AlertDialog.Builder(this).setTitle("Suche nach Updates …").setMessage("GitHub wird geprüft.").setCancelable(false).create();progress.show();
+        new Thread(() -> {
+            AppUpdate.Release found=null;String result;
+            try {
+                AppUpdate.Release latest=new AppUpdate().check();android.content.pm.PackageInfo current=AppUpdate.installed(this);
+                int cmp=AppUpdate.compare(latest.version,current.versionName);
+                if(cmp>0 || cmp==0 && current.versionName.endsWith("-dev")) {found=latest;result="Neue Version gefunden";}
+                else result="Keine neuere stabile Version verfügbar · GitHub: "+latest.version;
+            } catch(Exception e) {result="Updatesuche fehlgeschlagen: "+e.getMessage();}
+            final AppUpdate.Release release=found;final String message=result;
+            runOnUiThread(() -> {writing=false;if(isDestroyed()) return;progress.dismiss();updateRelease=release;updateFile=null;notice=message;render();});
+        },"update-check").start();
+    }
+    private void downloadAppUpdate() {
+        if(!requireAdmin() || updateRelease==null) return;
+        final AppUpdate.Release release=updateRelease;
+        new AlertDialog.Builder(this).setTitle("Update herunterladen?").setMessage("Version "+release.version+" von GitHub herunterladen und prüfen? Zur Installation ist anschließend eine vollständige Sicherung erforderlich.")
+            .setNegativeButton("Abbrechen",null).setPositiveButton("Herunterladen",(d,w) -> {
+                if(!requireAdmin()) return;writing=true;
+                AlertDialog progress=new AlertDialog.Builder(this).setTitle("Update wird geladen …").setMessage("APK wird heruntergeladen und auf Echtheit geprüft.").setCancelable(false).create();progress.show();
+                new Thread(() -> {
+                    java.io.File file=null;String result;
+                    try {file=new AppUpdate().download(getApplicationContext(),release);result="✓ Update heruntergeladen und geprüft";} catch(Exception e) {result="Update-Download fehlgeschlagen: "+e.getMessage();}
+                    final java.io.File ready=file;final String message=result;
+                    runOnUiThread(() -> {writing=false;if(isDestroyed()) return;progress.dismiss();updateFile=ready;notice=message;render();});
+                },"update-download").start();
+            }).show();
+    }
+    private void installAppUpdate() {
+        if(!requireAdmin() || updateRelease==null || updateFile==null) return;
+        if(Backup.prefs(this).getString("tree","").isEmpty()) {
+            new AlertDialog.Builder(this).setTitle("Sicherungsordner fehlt").setMessage("Bitte vor dem Update einen Sicherungsordner auswählen. Die Installation wird ohne erfolgreiche Sicherung nicht gestartet.")
+                .setNegativeButton("Abbrechen",null).setPositiveButton("Sicherung einrichten",(d,w) -> {if(requireAdmin()) {screen="backup";render();}}).show();return;
+        }
+        if(!getPackageManager().canRequestPackageInstalls()) {
+            new AlertDialog.Builder(this).setTitle("Android-Freigabe erforderlich").setMessage("Android muss dieser App das Installieren von Updates erlauben. Bitte die Freigabe in den Android-Einstellungen selbst aktivieren, danach das Schloss erneut öffnen und die Installation starten.")
+                .setNegativeButton("Abbrechen",null).setPositiveButton("Android-Einstellungen",(d,w) -> {
+                    if(!requireAdmin()) return;
+                    try {startActivityForResult(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+getPackageName())),UPDATE_PERMISSION);} catch(Exception e) {error("Installationsfreigabe ist auf diesem Gerät nicht verfügbar.");}
+                }).show();return;
+        }
+        final java.io.File file=updateFile;final AppUpdate.Release release=updateRelease;
+        new AlertDialog.Builder(this).setTitle("Update "+release.version+" installieren?").setMessage("Die aktuellen Geschäftsdaten werden zuerst gesichert. Danach öffnet sich die Android-Installationsbestätigung. Die App wird als Update installiert; keine Deinstallation erforderlich.")
+            .setNegativeButton("Abbrechen",null).setPositiveButton("Sichern & installieren",(d,w) -> {
+                if(!requireAdmin()) return;writing=true;
+                AlertDialog progress=new AlertDialog.Builder(this).setTitle("Update wird vorbereitet …").setMessage("Signatur wird erneut geprüft und Daten werden gesichert.").setCancelable(false).create();progress.show();
+                new Thread(() -> {
+                    String failure="";try {AppUpdate.beforeInstall(getApplicationContext(),file,release);} catch(Exception e) {failure="Installation nicht gestartet: "+e.getMessage();}
+                    final String problem=failure;
+                    runOnUiThread(() -> {writing=false;if(isDestroyed()) return;progress.dismiss();
+                        if(!problem.isEmpty()) {notice=problem;render();return;}
+                        if(!adminUnlocked) {notice="Vorbereitung abgeschlossen · Einstellungen bitte erneut entsperren";render();return;}
+                        Uri uri=new Uri.Builder().scheme("content").authority(getPackageName()+".updates").appendPath(file.getName()).build();
+                        Intent install=new Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        install.setClipData(android.content.ClipData.newRawUri("NLL Lager Update",uri));
+                        try {startActivityForResult(install,UPDATE_INSTALL);} catch(Exception e) {error("Android-Installation nicht verfügbar oder durch Geräteverwaltung gesperrt.");}
+                    });
+                },"update-install").start();
+            }).show();
     }
     private void backupMenu() {
         if(!requireAdmin()) return;
@@ -718,6 +801,9 @@ public class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);
+        if(request==UPDATE_PERMISSION || request==UPDATE_INSTALL) {
+            notice="Android-Dialog beendet · bei Bedarf Schloss öffnen und Update erneut starten";render();return;
+        }
         if(request==BACKUP_FOLDER || request==BACKUP_RESTORE) {
             pickerOpen=false;
             if(!adminUnlocked) {notice="Einstellungen gesperrt · Vorgang abgebrochen";render();return;}

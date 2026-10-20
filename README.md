@@ -6,7 +6,7 @@ Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen sca
 
 **Release 0.6.0 – erster Gerätetest.** [Gmail-Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Excel-Mailversand und Material-Mailimport mit Firmensignatur im Emulator geprüft. Honeywell-Hardwaretest und echte Prüfung der neuen Export-/Neuanlageabläufe stehen noch aus.
 
-**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`, neues Ausgabeformat, Bewegungsart-Auswahl und vollständige Gerätesicherung. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
+**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`, neues Ausgabeformat, Bewegungsart-Auswahl vollständige Gerätesicherung und In-App-Updates von GitHub. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
 
 ## Download
 
@@ -64,6 +64,10 @@ Materiallager ist eine Stammdatenzuordnung. Es gibt weiterhin keine Bestandsbere
 ## Vollständige Sicherung (ab 0.6.1-dev)
 
 Unter **Schloss → Sicherung & Wiederherstellung** einmal einen lokalen Dokumentenordner auswählen. Danach **Jetzt sichern** wählen und den Erfolgsstatus prüfen. Weitere Sicherungen werden nach Änderungen und beim App-Start automatisch eingeplant, sobald Android die Hintergrundarbeit zulässt. Sieben geprüfte Stände bleiben erhalten. [Einrichtung und Wiederherstellung](SICHERUNG.md). Die Sicherung enthält Material, Personen, Lager, offene Bewegungen und Archiv; keine Passwörter oder Google-Zugriffsdaten. Noch nicht im veröffentlichten Release 0.6.0 enthalten.
+
+## App-Updates (ab 0.6.1-dev)
+
+**Schloss → App aktualisieren → Nach Updates suchen** prüft den neuesten stabilen GitHub-Release ohne Anmeldung. Nach Download werden Prüfsumme, APK-Signatur, Paketname und höhere Versionsnummer geprüft. **Sichern & Update installieren** erstellt zuerst eine vollständige Sicherung und öffnet danach die Android-Installationsbestätigung. Ein eingerichteter Sicherungsordner ist Pflicht. Die Vorschau-App installiert keine Updates der Haupt-App. [Details und Releaseanforderungen](UPDATES.md). Einmalig muss eine Version mit dieser Funktion wie bisher installiert werden; die veröffentlichte 0.6.0 enthält den Updater noch nicht.
 
 ## Entwicklung
 
