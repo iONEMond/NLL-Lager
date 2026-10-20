@@ -1,3 +1,7 @@
+# Geräterückmeldung zu 0.5.0 – 20.10.2026
+
+Betreiber meldet: „Hab die 0.5 getestet funktioniert wunderbar“. Erfolgreicher Gerätetest von Version 0.5.0 laut Betreiber; keine einzelnen Testfälle oder Logs angegeben. Diese Bestätigung gilt für 0.5.0 und bestätigt nicht die später ergänzten Funktionen in 0.6.0 oder 0.6.1-dev. Historische Abschnitte mit damals ausstehenden Hardwaretests bleiben als damaliger Prüfstand bestehen.
+
 # In-App-Updates – 0.6.1-dev
 
 20.10.2026: 97 Tests, Debug-Build und Lint erfolgreich. 13 neue Update-Tests prüfen stabile Metadaten, numerische Versionsvergleiche, fehlende Prüfsummen, doppelte Assets, Fremd-URLs, HTTPS-/Redirect-Hostgrenzen, Redirect-Schleifen, API-Limits und tokenfreie Anfragen. Echte vorhandene Release-APK 0.5.0 wird kryptografisch mit apksig geprüft; manipulierte APK trotz angepasster Dateiprüfsumme, falsches Zertifikat, falscher Paketname, Downgrade und unpassende Release-Version werden abgelehnt. Simulierter Download mit echtem APK-Inhalt und erfolgreicher Sicherung vor Installationsvorbereitung geprüft, außerdem Teil-Downloadbereinigung, fehlende Sicherung und laufende Mailverarbeitung. APK-Provider ist nur lesbar und gibt keine Datenbankpfade frei. Zwei UI-Tests prüfen Menüschutz, Vorschau-Sperre und erforderlichen Sicherungsordner.

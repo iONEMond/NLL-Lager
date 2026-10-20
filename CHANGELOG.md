@@ -42,6 +42,8 @@ Feature-Update für genau einen Scanner im privaten Android-Profil, ohne Kommuni
 
 ## 0.5.0 – 19.10.2026
 
+- Rückmeldung des Betreibers am 20.10.2026: Version 0.5.0 auf dem Gerät getestet, funktioniert einwandfrei. Keine einzelnen Testschritte angegeben; daraus folgt keine Gerätefreigabe der neueren Mail-, Sicherungs- oder Updatefunktionen.
+
 - Erste veröffentlichte Test-APK mit dauerhaftem Release-Schlüssel; versionCode 6, Paket `de.nll.lager`, Anzeigename NLL Lager.
 - Funktionsstand unverändert gegenüber 0.4.1. Release-Build, Release-Lint und APK-Signatur erfolgreich geprüft; Honeywell-Hardwaretest steht aus.
 - Separate Installation zur Vorschau (`de.nll.lager.preview`), keine automatische Datenübernahme. Frühere Installationen mit gleichem Paket und anderem Schlüssel sind nicht direkt aktualisierbar.
