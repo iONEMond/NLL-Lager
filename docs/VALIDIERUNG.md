@@ -102,3 +102,5 @@ Neue Abläufe: 64 Tests, Debug-Build und Lint erfolgreich. Vier zusätzliche Mai
 ## Releaseprüfung 0.7.1 (Code 15)
 
 140 Tests ohne Fehler/übersprungene Tests, Release-Build und Release-Lint erneut erfolgreich. Paket de.nll.lager, Version 0.7.1, Code 15, Mindest-API 26, bestehender Release-Signer durch apksigner geprüft. APK 2.444.688 Bytes, SHA-256 44b52378981eb0acd013e16dc91f111014aa797bc4c7d903b26565a4d3cd7aca. Als stabiler Release v0.7.1 veröffentlicht. Latest-API, öffentlicher Download, SHA-256/GitHub-Digest und APK-Signatur erfolgreich geprüft. SHA256SUMS 657 Bytes, SHA-256 269e9e7bf1332404caf76ceb55ebc94a7b57726393199e5a7199f632fac50eb3. Kein Honeywell- oder echter Mailtest dieses Stands.
+
+Rücknahme 0.7.0 nach ausdrücklicher Bestätigung des Betreibers: GitHub-Release mit Assets gelöscht. Anonyme Prüfungen liefern 404 für Release-API und alten APK-Download; Latest weiterhin v0.7.1. Quelltag nicht entfernt.

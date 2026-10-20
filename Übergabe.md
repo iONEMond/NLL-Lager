@@ -19,7 +19,8 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.6.2-dev, Code 11 | Unveröffentlichter Zwischenstand, jetzt in 0.7.0 übernommen. |
 | 0.7.0-dev, Code 12 | Früherer lokaler Entwicklungsstand. |
 | 0.7.1-dev, Code 14 | Unveröffentlichte Weiterentwicklung: Abbruch und zusätzliche Android-Teilen-Option. |
-| 0.7.0, Code 13 | Neuester stabiler Release v0.7.0; signiert, veröffentlicht und öffentlicher Download geprüft. |
+| 0.7.0, Code 13 | Zurückgezogen: Release und Download wegen Mailproblemen gelöscht; Quelltag bleibt erhalten. |
+| 0.7.1, Code 15 | Neuester stabiler Release, signiert und öffentlich geprüft. |
 
 Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
 
@@ -185,4 +186,4 @@ Aktueller Prüfstand einschließlich Hintergrundkorrektur: 140 lokale Tests ohne
 
 Release-Kandidat 0.7.1, Code 15: Betreiber hat Übernahme auf main, Veröffentlichung und Entfernen des fehlerhaften Releases 0.7.0 ausdrücklich angefordert. Korrektur auf main übernommen. 140 Tests, Release-Build und Release-Lint erneut erfolgreich. Signierte 0.7.1 mit bestehendem Zertifikat geprüft, Größe 2.444.688 Bytes, SHA-256 44b52378981eb0acd013e16dc91f111014aa797bc4c7d903b26565a4d3cd7aca. Android Studio hatte Passwortfelder vorausgefüllt; Remember passwords war aktiviert und wurde vor dem Signieren deaktiviert. Passwörter nicht ausgelesen. Veröffentlichung und Rücknahme noch ausstehend.
 
-0.7.1 (Code 15) als stabiler Release v0.7.1 veröffentlicht: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.1. Anonyme Latest-API bestätigt v0.7.1, draft=false, prerelease=false; öffentlicher APK-Download und Signatur erneut geprüft. SHA256SUMS 657 Bytes, SHA-256 269e9e7bf1332404caf76ceb55ebc94a7b57726393199e5a7199f632fac50eb3. Entfernen des alten Releases 0.7.0 noch ausstehend.
+0.7.1 (Code 15) als stabiler Release v0.7.1 veröffentlicht: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.1. Anonyme Latest-API bestätigt v0.7.1, draft=false, prerelease=false; öffentlicher APK-Download und Signatur erneut geprüft. SHA256SUMS 657 Bytes, SHA-256 269e9e7bf1332404caf76ceb55ebc94a7b57726393199e5a7199f632fac50eb3. Release 0.7.0 nach ausdrücklicher Bestätigung gelöscht: API /releases/tags/v0.7.0 und alter APK-Download liefern anonym 404. Latest bleibt v0.7.1. Git-Tag und Quellcode-Historie erhalten; lokale alte APK nur als historisches Artefakt, nicht anbieten.
