@@ -5,3 +5,11 @@ local.properties
 *.iml
 *.keystore
 *.jks
+.DS_Store
+*.apk
+*.aab
+!downloads/NLL-Lager-0.1.0-debug.apk
+!downloads/NLL-Lager-0.4.1-vorschau.apk
+!downloads/NLL-Lager-0.5.0-release.apk
+outputs/
+docs/archiv/

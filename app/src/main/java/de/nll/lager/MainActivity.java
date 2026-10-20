@@ -270,7 +270,7 @@ public class MainActivity extends Activity {
         text("Mail & Updates",20,INK);
         text("Die optionale Gmail-Anbindung überträgt Listen und Berichte. Buchungen funktionieren auch ohne Internet. App-Updates stammen aus stabilen GitHub-Releases; vor der Installation werden Signatur und Version geprüft und eine Sicherung erstellt.",16,MUTED);
         text("Projekt & Versionshistorie",20,INK);
-        text("github.com/"+AppUpdate.REPO+"\nVersionshistorie: CHANGELOG.md\nAnleitungen: SICHERUNG.md · UPDATES.md · GMAIL-EINRICHTUNG.md",16,MUTED);
+        text("github.com/"+AppUpdate.REPO+"\nVersionshistorie: CHANGELOG.md\nAnleitungen im Projektordner docs/: SICHERUNG.md · UPDATES.md · GMAIL-EINRICHTUNG.md",16,MUTED);
         text("Für Support bitte Version, Build, Android-Version und eine Beschreibung des Problems angeben. Keine Passwörter oder Schlüssel weitergeben.",16,MUTED);
     }
     private void updateMenu() {

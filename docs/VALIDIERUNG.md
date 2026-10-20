@@ -1,3 +1,7 @@
+# Repository-Pflege – 20.10.2026
+
+Dokumentation nach docs/ gegliedert, README gekürzt, Übergabe und Entwicklungsanleitung ergänzt. 11 Markdown-Dokumente mit 46 relativen Dateilinks geprüft; ein absichtlich ungültiger Link wurde im Prüftest korrekt abgelehnt und die temporäre Testdatei anschließend entfernt. About-Text auf den neuen Anleitungsordner angepasst. assembleRelease und lintRelease danach erfolgreich; fachliche Logik unverändert, bestehende 97 Funktionstests aus dem letzten Lauf nicht erneut ausgeführt. Keine weitere Geräteprüfung und keine signierte Veröffentlichung.
+
 # Release-Vorbereitung 0.6.1 – 20.10.2026
 
 About-Menü nachträglich ergänzt: Version/Build aus PackageInfo, Ausgabe, Android-/API- und Datenbankversion sowie Betriebs-/Projekthinweise. Auch dieser Bildschirm ist als Admin-Bildschirm geschützt und verwendet die bestehende Zurück-/Sperrlogik. Nach der Ergänzung erneut alle 97 vorhandenen Tests, assembleRelease und lintRelease erfolgreich. Noch keine visuelle Geräteprüfung dieses Menüs; Release weiterhin unsigniert.

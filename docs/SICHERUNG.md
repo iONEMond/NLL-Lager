@@ -1,6 +1,6 @@
 # Sicherung und Wiederherstellung
 
-Ab Entwicklungsstand 0.6.1-dev (versionCode 9), noch nicht in Release 0.6.0.
+Für Release 0.6.1 (versionCode 10) vorbereitet, noch nicht veröffentlicht und nicht in Release 0.6.0 enthalten.
 
 ## Einrichten
 
