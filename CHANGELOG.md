@@ -2,9 +2,9 @@
 
 Neueste veröffentlichte APK: **0.6.1**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
-## 0.7.0 – in Entwicklung, nicht veröffentlicht
+## 0.7.0 – Release vorbereitet, noch nicht veröffentlicht
 
-20.10.2026: Funktionspaket 0.7.0-dev, versionCode 12. Beinhaltet alle bislang unveröffentlichten Änderungen aus 0.6.2-dev sowie die folgenden Erweiterungen. Neuester signierter Release bleibt 0.6.1.
+20.10.2026: Release-Kandidat 0.7.0, versionCode 13 (höher als Entwicklungsstand 12). Beinhaltet alle bislang unveröffentlichten Änderungen aus 0.6.2-dev sowie die folgenden Erweiterungen. Neuester signierter Release bleibt 0.6.1.
 
 - Stammdaten vollständig bearbeiten: Code, Materialnummer, Beschreibung, Artikelart, Einheit, Name und Lagerzuordnung. Doppelte Codes werden abgewiesen, frühere Buchungssnapshots bleiben unverändert. Aktive Zuordnungen werden aktualisiert bzw. zur Neuauswahl verworfen.
 - Buchungen im geschützten Bewegungs-/Archivmenü stornieren oder anschließend neu erfassen. Original unverändert; neue offene Gegenbuchung mit gleicher positiver Menge, umgekehrtem Von-/Nach-Lager und Bewegungsart Storno. Beschreibung verweist auf Original-ID und Grund; Datensatz speichert zusätzlich Bezug, Grund und ausführenden Mitarbeitercode bzw. Administration. Auch bei bereits archiviertem Original verwendbar. Ein Storno je Original; Gegenbuchungen können nicht nochmals storniert werden. Korrigierte Buchung bleibt bis zur gesonderten Bestätigung ein Entwurf.
@@ -13,7 +13,7 @@ Neueste veröffentlichte APK: **0.6.1**. Geplante Funktionen sind ausdrücklich 
 - Sicherungsstatus auf Startseite, in Einstellungen und Sicherungsmenü: letzter erfolgreicher Zeitpunkt und noch nicht gesicherte Änderungen. Datenbankinterne Revision zählt nur festgeschriebene Geschäftsdatenänderungen; Sicherung merkt sich ihren tatsächlichen Snapshot-Stand, spätere Änderungen bleiben sichtbar.
 - Datenbankmigration 6→7 ergänzt Storno-Metadaten, eindeutigen Gegenbuchungsbezug, lokale Datenbankkennung und Revisions-Trigger. Neue Sicherungen verwenden Formatversion 2 mit Storno-Verlauf; alte Format-1-Sicherungen bleiben nach ursprünglicher Prüfsummenprüfung lesbar. Version 2 benötigt zur Wiederherstellung mindestens die neue App-Version. Das abgestimmte Acht-Spalten-Exportlayout bleibt erhalten; Stornos sind zusätzliche Zeilen.
 
-Prüfung: 124 lokale Tests ohne Fehler/übersprungene Tests; Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Tests umfassen Datenmigration, Format-1-Kompatibilität, Storno-Erhalt und Bezugsvalidierung, Rollbacks, Sicherungsrevisionen, Dublettenbestätigung, Stammdatenhistorie und UI-Abläufe. Keine neue Installation, Mailversendung oder Honeywell-Prüfung durchgeführt. Lokale Debug-Vorschau separat gebaut; Release-Ausgabe noch unsigniert.
+Prüfung: 124 lokale Tests ohne Fehler/übersprungene Tests; Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Tests umfassen Datenmigration, Format-1-Kompatibilität, Storno-Erhalt und Bezugsvalidierung, Rollbacks, Sicherungsrevisionen, Dublettenbestätigung, Stammdatenhistorie und UI-Abläufe. Keine neue Installation, Mailversendung oder Honeywell-Prüfung durchgeführt. Lokale Debug-Vorschau separat gebaut; Release-APK 0.7.0 (Code 13) anschließend mit bestehendem Zertifikat signiert und mit apksigner geprüft; Veröffentlichung noch ausstehend.
 
 ## 0.6.2 – unveröffentlichter Zwischenstand, in 0.7.0 übernommen
 

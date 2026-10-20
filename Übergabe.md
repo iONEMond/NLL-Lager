@@ -17,7 +17,8 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.6.1-dev, Code 9 | Früherer lokaler Entwicklungsstand, keine stabile Veröffentlichung. |
 | 0.6.1, Code 10 | Letzter veröffentlichter Quellstand, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
 | 0.6.2-dev, Code 11 | Unveröffentlichter Zwischenstand, jetzt in 0.7.0 übernommen. |
-| 0.7.0-dev, Code 12 | Aktueller Entwicklungsstand: fünf zusätzliche Funktionen, 124 Tests; noch nicht signiert oder veröffentlicht. |
+| 0.7.0-dev, Code 12 | Früherer lokaler Entwicklungsstand. |
+| 0.7.0, Code 13 | Mit bestehendem Zertifikat signiert und geprüft; Veröffentlichung noch ausstehend. |
 
 Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
 
