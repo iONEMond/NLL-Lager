@@ -70,6 +70,30 @@ public class WorkflowTest {
         password.setText("Test-password-42");auth.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
         return ShadowAlertDialog.getLatestAlertDialog();
     }
+    @Test public void editingCatalogUpdatesFieldsButKeepsHistoricalSnapshots() throws Exception {
+        db.book(db.material("00123"),"A","B","1",db.person("0007"));unlockForTest();invoke("editAssignment",new Class<?>[]{String.class,boolean.class},"00123",false);
+        AlertDialog edit=ShadowAlertDialog.getLatestAlertDialog();
+        ((EditText)find(edit.getWindow().getDecorView(),"Beschreibung",true)).setText("Neues Ventil");
+        ((EditText)find(edit.getWindow().getDecorView(),"Materialnummer",true)).setText("M-NEW");
+        ((EditText)find(edit.getWindow().getDecorView(),"Einheit",true)).setText("Pack");
+        edit.getButton(AlertDialog.BUTTON_POSITIVE).performClick();assertEquals("Neues Ventil",db.material("00123").description);assertEquals("Pack",db.material("00123").unit);assertTrue(db.history(false).get(0).contains("Ventil"));assertFalse(db.history(false).get(0).contains("Neues Ventil"));
+    }
+    @Test public void rapidConfirmationClicksDoNotDuplicateAndRepeatedBookingRequiresWarning() {
+        signInAndSelect();chooseFrom("A");chooseTo("B");press("Bewegung speichern");AlertDialog first=ShadowAlertDialog.getLatestAlertDialog();
+        first.getButton(AlertDialog.BUTTON_POSITIVE).performClick();first.getButton(AlertDialog.BUTTON_POSITIVE).performClick();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertEquals(1,db.count(false));
+        scan("Suchen oder Code scannen","00123");chooseFrom("A");chooseTo("B");press("Bewegung speichern");
+        AlertDialog duplicate=ShadowAlertDialog.getLatestAlertDialog();assertEquals("Trotzdem buchen",duplicate.getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());
+        duplicate.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertEquals(1,db.count(false));
+    }
+    @Test public void cancellationRequiresUnlockAndReasonThenOpensUnsavedCorrectionDraft() throws Exception {
+        long id=db.book(db.material("00123"),"A","B","1.25",db.person("0007"),"Entnahme");
+        invoke("cancelBooking",new Class<?>[]{long.class},id);assertEquals(1,db.count(false));
+        AlertDialog denied=ShadowAlertDialog.getLatestAlertDialog();denied.dismiss();unlockForTest();invoke("cancelBooking",new Class<?>[]{long.class},id);
+        AlertDialog cancel=ShadowAlertDialog.getLatestAlertDialog();cancel.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();assertEquals(1,db.count(false));
+        EditText reason=(EditText)find(cancel.getWindow().getDecorView(),"Stornogrund",true);assertNotNull(reason.getError());reason.setText("Menge falsch");
+        cancel.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();assertEquals(2,db.count(false));assertTrue(db.movement(id).reversed);assertEquals("1.25",field("Menge (Stk)").getText().toString());
+        field("Menge (Stk)").setText("2");press("Bewegung speichern");ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertEquals(3,db.count(false));
+    }
     @Test public void conflictingFileImportOffersExplicitChoicesAndCancelDoesNotChangeData() throws Exception {
         unlockForTest();
         java.util.List<String[]> rows=java.util.Collections.singletonList(new String[]{"00123","M-NEW","New","Material","Stk"});

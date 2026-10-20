@@ -9,11 +9,11 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | **0.5.0** | Vom Betreiber auf dem Gerät erfolgreich getestet |
 | **0.6.0 · Build 8** | Vorheriger Release; ergänzt Gmail |
 | **0.6.1 · Build 10** | **Neuester veröffentlichter Release** |
-| **0.6.2-dev · Build 11** | In Entwicklung, noch nicht als Release veröffentlicht |
+| **0.7.0-dev · Build 12** | Funktionsupdate in Entwicklung, noch nicht als Release veröffentlicht |
 
 [Release 0.6.1](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1) ergänzt Firmenlisten-Import, das neue Exportformat, Bewegungsarten, vollständige Sicherung/Wiederherstellung, GitHub-Updates und ein About-Menü. Lokale Prüfungen: 97 Tests, Release-Build und Release-Lint erfolgreich. Tests der neuen Abläufe auf dem Honeywell stehen aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 
-**In Entwicklung für 0.6.2:** optionale Importspalten, vierstellige PIN, Fortschrittsbalken, kompakteres Sync-Menü, manuelles Löschen und Auswahl bei bereits vorhandenen Importcodes. 108 lokale Tests sowie Debug-/Release-Build und Lint erfolgreich. Noch nicht in der unten angebotenen APK enthalten.
+**In Entwicklung für 0.7.0:** Alle Änderungen aus 0.6.2-dev sowie vollständige Stammdatenbearbeitung, nachvollziehbare Stornos und neue Buchung, Doppelscan-Schutz, detaillierte Importvorschau und sichtbarer Sicherungsstatus. 124 lokale Tests sowie Debug-/Release-Build und Lint erfolgreich. Noch nicht in der unten angebotenen APK enthalten.
 
 ## Installation
 

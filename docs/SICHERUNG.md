@@ -24,6 +24,12 @@ Dateien heißen NLL-Sicherung-Datum-Uhrzeit-Kennung.nllbackup. Erst schreiben, s
 
 Kein Excel-Bericht, sondern eine versionierte JSON-Sicherungsdatei mit SHA-256-Prüfsumme. Sie ist nicht verschlüsselt; die Prüfsumme erkennt Beschädigungen und ist kein Schutz gegen absichtliche Manipulation. Keine App-Passwörter, Google-Tokens, Kontofreigaben oder Mailwarteschlangen. Nur selbst erzeugte, vertrauenswürdige Sicherungen verwenden. Begrenzung: 64 MB und 100.000 Datensätze je Geschäftstabelle.
 
+## Ergänzungen ab 0.7.0-dev (noch nicht veröffentlicht)
+
+Neue Sicherungen verwenden **Formatversion 2**. Sie enthalten zusätzlich den Storno-Verlauf: Originalbezug, Grund, ausführenden Mitarbeitercode bzw. Administration und die Gegenbuchung selbst. Ein fehlender/falscher Originalbezug oder mehrfaches Storno wird bei der Prüfung abgelehnt. Format-1-Sicherungen aus 0.6.1 bleiben lesbar; ihre Prüfsumme wird vor der Anpassung an das neue interne Format geprüft. Neue Format-2-Dateien lassen sich nicht mit der alten 0.6.1 wiederherstellen.
+
+Datenbankversion 7 zählt Geschäftsdatenänderungen in derselben Transaktion wie die Änderung. Der Sicherungsstatus vergleicht diesen Stand mit dem erfolgreich abgeschlossenen Snapshot. Änderungen während des Dateischreibens bleiben dadurch als ungesichert sichtbar. Rückgerollte Transaktionen erzeugen keine falsche Änderungsanzeige. Datenbankkennung und Revisionszähler sind lokale Statusmetadaten, keine wiederherzustellenden Geschäftsdaten. Eine Wiederherstellung ersetzt diese Kennung nicht.
+
 ## Wiederherstellen
 
 1. Nach einer Neuinstallation zunächst ein App-Passwort festlegen und das geschützte Menü öffnen.

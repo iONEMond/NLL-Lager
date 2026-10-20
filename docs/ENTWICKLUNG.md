@@ -28,7 +28,7 @@ python3 tools/check_docs.py
 
 Der Release-Build aus der Kommandozeile ist ohne Signierkonfiguration **unsigniert**. Die Datei `app/build/outputs/apk/release/app-release-unsigned.apk` ist kein auslieferbares Update. Debug nutzt Paket `de.nll.lager.preview`, Release `de.nll.lager`.
 
-97 vorhandene lokale Tests nutzen Robolectric mit Android 11. Ergebnisse: `app/build/test-results/testDebugUnitTest/` und `app/build/reports/`. Ein erfolgreicher Testlauf ersetzt keinen Honeywell-Test. Das Prüfprotokoll beschreibt die jeweilige Reichweite.
+124 vorhandene lokale Tests nutzen Robolectric mit Android 11. Ergebnisse: `app/build/test-results/testDebugUnitTest/` und `app/build/reports/`. Ein erfolgreicher Testlauf ersetzt keinen Honeywell-Test. Das Prüfprotokoll beschreibt die jeweilige Reichweite.
 
 `./gradlew :app:connectedDebugAndroidTest` nur gegen ein ausdrücklich separates Testgerät ausführen: Die Tests löschen App-Testdaten. Keine produktiven Daten oder Emulatoren dafür verwenden.
 
@@ -40,7 +40,7 @@ Der Release-Build aus der Kommandozeile ist ohne Signierkonfiguration **unsignie
 
 ## Release-Ablauf
 
-1. Tatsächlichen GitHub-Release- und Branchstand lesen. Installierten Entwicklungsständen Rechnung tragen: aktuell ist 0.6.1 mit versionCode 10 vorbereitet; Entwicklungsstand 9 existierte bereits.
+1. Tatsächlichen GitHub-Release- und Branchstand lesen. Installierten Entwicklungsständen Rechnung tragen: aktuell ist 0.7.0-dev mit versionCode 12 vorbereitet; Entwicklungsstand 0.6.2-dev mit Code 11 existierte bereits. Für den späteren stabilen Release einen höheren Code wählen.
 2. Version in `app/build.gradle`, README, CHANGELOG und Prüfprotokoll konsistent halten. Solange keine signierte APK veröffentlicht ist, ausdrücklich „vorbereitet/nicht veröffentlicht“ schreiben.
 3. Tests, Release-Build und Release-Lint ausführen; Metadaten prüfen. Geräteprüfungen nur nach tatsächlicher Durchführung bestätigen.
 4. Über Android Studio **Generate Signed App Bundle or APK → APK** mit dem bestehenden Release-Schlüssel signieren. Der Betreiber trägt nötige Passwörter im lokalen Dialog ein. Nicht im Chat erfragen und nicht speichern lassen, sofern nicht ausdrücklich beauftragt.

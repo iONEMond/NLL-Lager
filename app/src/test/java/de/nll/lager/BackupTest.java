@@ -39,6 +39,20 @@ public class BackupTest {
         store.book(store.material("0001"),"A","B","1.25",store.person("0007"),"Entnahme");store.archive(store.cutoff(),"old-export");
         store.book(store.material("0001"),"B","A","2",store.person("0007"),"Rückgabe");
     }
+    @Test public void statusTracksOnlyCommittedChangesAndLatestVerifiedSnapshot() throws Exception {
+        seed();assertTrue(Backup.statusLine(context,store).contains("nicht eingerichtet"));folder();
+        assertTrue(Backup.statusLine(context,store).contains("erster geprüfter Stand"));Backup.save(context,true);
+        assertTrue(Backup.statusLine(context,store).contains("Keine Änderungen"));
+        store.addPerson("new","Ben");assertTrue(Backup.statusLine(context,store).contains("Nicht gesicherte Änderungen"));
+        Backup.save(context,false);assertTrue(Backup.statusLine(context,store).contains("Keine Änderungen"));
+        long revision=store.revision();android.database.sqlite.SQLiteDatabase db=store.getWritableDatabase();db.beginTransaction();try{store.addPerson("rollback","Test");}finally{db.endTransaction();}
+        assertEquals(revision,store.revision());assertTrue(Backup.statusLine(context,store).contains("Keine Änderungen"));
+    }
+    @Test public void mutationWhileBackupFileIsWrittenStaysMarkedUnsaved() throws Exception {
+        seed();folder();BackupData earlier=Backup.snapshot(context);store.addPerson("later","Ben");
+        Backup.prefs(context).edit().putLong("last",System.currentTimeMillis()).putLong("revision",earlier.revision).putString("databaseId",earlier.databaseId).commit();
+        assertTrue(Backup.statusLine(context,store).contains("Nicht gesicherte Änderungen"));
+    }
     @Test public void completeRoundTripPreservesSnapshotsArchiveLocationsAndNoCredentials() throws Exception {
         seed();new AdminSettings(context).setPassword("My-secret-password".toCharArray());
         BackupData before=Backup.snapshot(context);byte[] bytes=before.bytes();
@@ -56,7 +70,7 @@ public class BackupTest {
         seed();JSONObject original=new JSONObject(new String(Backup.snapshot(context).bytes(),"UTF-8"));
         JSONObject broken=new JSONObject(original.toString());broken.put("sha256","bad");
         assertThrows(Exception.class,() -> BackupData.read(new ByteArrayInputStream(broken.toString().getBytes("UTF-8"))));
-        original.put("version",2);assertThrows(Exception.class,() -> BackupData.read(new ByteArrayInputStream(original.toString().getBytes("UTF-8"))));
+        original.put("version",99);assertThrows(Exception.class,() -> BackupData.read(new ByteArrayInputStream(original.toString().getBytes("UTF-8"))));
         original.put("version",1);JSONObject data=original.getJSONObject("data");data.getJSONArray("materials").put(data.getJSONArray("materials").getJSONArray(0));
         original.put("sha256",BackupData.digest(data.toString().getBytes("UTF-8")));
         assertThrows(Exception.class,() -> BackupData.read(new ByteArrayInputStream(original.toString().getBytes("UTF-8"))));

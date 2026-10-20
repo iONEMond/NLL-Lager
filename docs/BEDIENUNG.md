@@ -2,7 +2,7 @@
 
 [Zur Projektstartseite](../README.md) · [Versionshistorie](../CHANGELOG.md)
 
-Die Anleitung umfasst den veröffentlichten Stand 0.6.1 sowie ausdrücklich gekennzeichnete Ergänzungen für 0.6.2-dev. 0.6.2 ist noch nicht als Release verfügbar.
+Die Anleitung umfasst den veröffentlichten Stand 0.6.1 sowie ausdrücklich gekennzeichnete Ergänzungen für 0.7.0-dev (einschließlich des Zwischenstands 0.6.2-dev). 0.7.0 ist noch nicht als Release verfügbar.
 
 ## Start und Buchung
 
@@ -43,6 +43,20 @@ Mailbefehle: **NLL Material**, **NLL Personen**, **NLL Export**. Kein Auftragssc
 - Personen-/Materialliste: Eintrag antippen → **Person löschen** bzw. **Material löschen** → bestätigen. Historische Bewegungen und Archiv werden nicht gelöscht. Gelöschte Einträge können durch einen späteren Import wieder angelegt werden.
 - Import, Datei-/Mail-Export und manuelle Synchronisierung zeigen einen Fortschrittsbalken. Er zeigt je Arbeitsschritt die Datensatzanzahl, wenn bekannt, sonst eine laufende Aktivität. Erst die abschließende Erfolgsmeldung bestätigt die Übernahme bzw. Archivierung.
 - Bei verbundener Gmail-Anbindung werden Einrichtungsoptionen ausgeblendet. **Verbindung bearbeiten** zeigt sie bei Bedarf wieder; fehlende Verbindung erfordert erneut Google-Freigabe.
+
+## Weitere Funktionen für 0.7.0-dev
+
+**Stammdaten bearbeiten:** Unter Material-/Personenliste den Eintrag antippen. Code und alle fachlichen Felder sind änderbar. Ein bereits belegter Code wird abgelehnt. Alte Buchungen behalten Code, Beschreibung, Person und Lager vom damaligen Buchungszeitpunkt.
+
+**Buchungen korrigieren:** Einstellungen → Bewegungen & Archiv → betreffende Buchung → Stornieren/korrigieren. Einen Grund angeben. „Nur stornieren“ erfasst eine Gegenbuchung; „Stornieren & neu erfassen“ öffnet danach einen vorbelegten Buchungsentwurf. Dieser muss separat gespeichert werden. Fehlt inzwischen Artikel oder Person im Katalog, bleibt das Storno erfasst; Stammdaten vor der Neubuchung pflegen.
+
+Das Original wird weder geändert noch gelöscht. Die Gegenbuchung hat dieselbe positive Menge, umgekehrte Lager und die Bewegungsart **Storno**. Ihre Beschreibung nennt Original-ID und Grund. Auch nach Export/Archivierung des Originals ist die Gegenbuchung eine neue offene Bewegung für den nächsten Bericht. Bei noch offenen Originalen erscheinen Original und Storno gemeinsam im Export. Materialwirtschaft muss diese Stornozeilen entsprechend berücksichtigen. Ein Original kann genau einmal storniert werden; ein Storno selbst nicht erneut. Für eine Fehlkorrektur eine passende neue normale Buchung erfassen.
+
+**Doppelscan-Schutz:** Eine mit der letzten nicht stornierten Normalbuchung identische Erfassung innerhalb zehn Sekunden fragt „Trotzdem buchen“. Prüfkriterien: Person, Code, Menge, Von-/Nach-Lager und Bewegungsart. Abbrechen verändert keine Daten. Bewusst wiederholte Buchungen sind weiterhin möglich. Das ist eine Prüfung schneller Wiederholungen, keine allgemeine Dublettenbereinigung.
+
+**Importvorschau:** Vor Übernahme werden die Anzahlen neuer, geänderter und unveränderter Einträge angezeigt. „Änderungen ansehen“ zeigt die gelieferten Änderungen je Feld mit Alt-/Neuwert, 20 Einträge je Seite. Nicht gelieferte Zusatzspalten werden erhalten. Ändern sich die Geschäftsdaten zwischen Vorschau und Übernahme, wird erneut eine Vorschau/Bestätigung verlangt.
+
+**Sicherungsstatus:** Startseite, Einstellungen und Sicherungsmenü zeigen den letzten erfolgreichen Sicherungszeitpunkt und ob danach Geschäftsdaten geändert wurden. Automatische Sicherungen dürfen verzögert sein. Der Hinweis bezieht sich auf den letzten fertig geprüften Snapshot; er ist keine laufende Kontrolle, ob eine Datei außerhalb der App später gelöscht oder beschädigt wurde. Nach Auswahl eines anderen Sicherungsordners ist zunächst eine neue Sicherung nötig.
 
 ## Export und Daten
 

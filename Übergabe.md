@@ -16,11 +16,12 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.6.0, Code 8 | Vorheriger GitHub-Release `v0.6.0`. Gmail und weitere Bedienabläufe. Noch keine umfassende Honeywell-Bestätigung. |
 | 0.6.1-dev, Code 9 | Früherer lokaler Entwicklungsstand, keine stabile Veröffentlichung. |
 | 0.6.1, Code 10 | Letzter veröffentlichter Quellstand, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
-| 0.6.2-dev, Code 11 | Aktueller Entwicklungsstand: sechs Bedien-/Importänderungen, 108 Tests; nicht signiert oder veröffentlicht. |
+| 0.6.2-dev, Code 11 | Unveröffentlichter Zwischenstand, jetzt in 0.7.0 übernommen. |
+| 0.7.0-dev, Code 12 | Aktueller Entwicklungsstand: fünf zusätzliche Funktionen, 124 Tests; noch nicht signiert oder veröffentlicht. |
 
 Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
 
-Letzter funktionaler Prüfstand: 108 lokale Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich für 0.6.2-dev. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
+Letzter funktionaler Prüfstand: 124 lokale Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich für 0.7.0-dev. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
 
 ## Arbeitsverzeichnis und GitHub
 
@@ -69,9 +70,18 @@ Gradle 8.13, AGP 8.9.2, Java-Sprachziel 17, JDK 21 lokal, API 26–35. `com.goog
 
 Sync-Einrichtung bei `config.ready()` zunächst eingeklappt, über Verbindung bearbeiten erweiterbar. Fehlende Verbindung zeigt wieder Setup/Google-Autorisierung. Personen/Material haben im Lagerzuordnungsdialog eine Löschaktion mit erneuter Adminprüfung und Schutz vor gleichzeitiger Mailverarbeitung. `Store.deleteEntry` löscht ausschließlich Stammdaten; historische Snapshots bleiben unverändert. Bei Löschung aktiver Person/Artikel entfernt die UI deren aktuelle Zuordnung.
 
+## Ergänzte Funktionen in 0.7.0-dev
+
+- `Store.updatePerson/updateMaterial` bearbeitet auch Primärcodes. Kollisionen werden vom eindeutigen Schlüssel abgewiesen; frühere Buchungen behalten Snapshots. UI verwirft/aktualisiert betroffene aktive Auswahl, sperrt parallele Mailverarbeitung und prüft Freigabe erneut.
+- `Store.cancelMovement` erzeugt eine neue offene Gegenbuchung, verändert das Original nicht. Menge bleibt positiv, Lager werden vertauscht, Bewegungsart ist Storno. `reversal_of` (eindeutiger Index) verweist auf Original; `cancellation_reason` und `cancelled_by` dokumentieren Grund/Akteur. Bei nicht angemeldeter Person Akteur „Administration“. Keine individuelle starke Authentisierung behaupten. Storno eines Stornos und zweites Storno desselben Originals sind gesperrt. Auch für archivierte/versandte Originale wird nur eine neue offene Gegenbuchung erzeugt; gespeicherte Mailberichte bleiben unverändert. Acht Exportspalten unverändert, neue Stornozeilen müssen von Materialwirtschaft berücksichtigt werden.
+- „Stornieren & neu erfassen“ speichert zunächst das Storno, dann einen ungespeicherten Buchungsentwurf mit damaliger Menge/Lagern/Art für separate Bestätigung. Fehlende Stammdaten werden nicht automatisch wieder angelegt. Original und Storno dürfen niemals gelöscht werden, um einen falschen Korrekturversuch zu kaschieren.
+- `Store.recentDuplicate/bookChecked` prüft letzte nicht stornierte Normalbuchung, identische Person/Code/Menge/Lager/Bewegungsart innerhalb zehn Sekunden. Bestätigung und Schreiben sind transaktional abgesichert. UI fängt Mehrfachklicks ab und bindet den bestätigten Artikel/Mitarbeiter als Snapshot. Kein globaler Dublettendetektor und keine zeitlose Einmalbuchung.
+- `ImportPreview` liest konsistent und schreibfrei, liefert Anzahlen plus feldweise Unterschiede. Spaltenpräsenz aus ExcelImport erhalten! Detaildialog blättert mit 20 Zeilen. Datenrevision wird in der Vorschau festgehalten; `Store.importRows(...expectedRevision)` prüft sie innerhalb der Übernahmetransaktion. Bei Abweichung neue Vorschau und erneute ausdrückliche Übernahme, kein stilles Fortfahren. Bestehende Overloads bleiben für Tests/interne strikt definierte Aufrufe.
+- Revisions-Trigger zählen INSERT/UPDATE/DELETE auf Stammdaten/Bewegungen und Lageroptionen (nur app_settings.key=locations). Schlüssel `database_id` und `data_revision` gehören nicht in die Geschäftssicherung. Snapshot nimmt Revision und Kennung innerhalb derselben DB-Transaktion auf; erfolgreiche Sicherung merkt sich genau diese Werte. Spätere Änderungen während Dateischreiben bleiben ungesichert; Rollbacks zählen nicht. `Backup.statusLine` ist ein Vergleich zum letzten erfolgreichen Snapshot, keine erneute Live-Dateiprüfung. Ordnerwechsel setzt alten Status zurück.
+
 ## Datenbank und Migrationen
 
-SQLite `nll-lager.db`, aktuell Version **6**. Geschäftsdaten bleiben im privaten App-Speicher; keine direkt gemeinsam genutzte Arbeitsdatenbank. Bewegungen enthalten historische Snapshots von Artikel, Mitarbeiter und Lagern; Stammdatenupdates verändern diese nicht.
+SQLite `nll-lager.db`, aktuell Version **7**. Geschäftsdaten bleiben im privaten App-Speicher; keine direkt gemeinsam genutzte Arbeitsdatenbank. Bewegungen enthalten historische Snapshots von Artikel, Mitarbeiter und Lagern; Stammdatenupdates verändern diese nicht.
 
 | DB-Version | Ergänzung |
 | --- | --- |
@@ -80,6 +90,7 @@ SQLite `nll-lager.db`, aktuell Version **6**. Geschäftsdaten bleiben im private
 | 4 | Dauerhafte automatische Archivierung nach bestätigtem Mailversand |
 | 5 | `movement_kind`, Altdaten leer |
 | 6 | `app_settings` für Lageroptionen in derselben Transaktion wie Geschäftsdaten |
+| 7 | Storno-Bezug/-Grund/-Akteur, eindeutiger Gegenbuchungsindex, lokale Datenbankkennung und transaktionale Revisions-Trigger |
 
 Alte Lagereinstellungen aus Preferences bleiben als Fallback lesbar. Passwörter und Gmail-Konfiguration bleiben außerhalb der Geschäftstabellen. Migrationen müssen alte Stammdaten, offene Buchungen und Archive erhalten. Keine Deinstallation, kein Datenbankreset als Problemlösung. Mengen werden exakt als Dezimalwerte behandelt, deutsche Kommaeingabe wird unterstützt. Codes und Lagernummern als Text erhalten, insbesondere führende Nullen.
 
@@ -114,7 +125,7 @@ Echt geprüft im separaten Emulator: Google-Anmeldung, Kontofreigabe, Abruf, lee
 
 ## Sicherung und Wiederherstellung
 
-[Anleitung](docs/SICHERUNG.md). SAF-Dokumentenordner mit persistierter Lese-/Schreibfreigabe. Versioniertes logisches JSON `NLL-Lager-Sicherung`, Formatversion 1, SHA-256 über Nutzdaten. Keine rohe SQLite-Kopie. Enthält Materialien, Personen, Lageroptionen und offene/archivierte Bewegungen mit IDs und Snapshots. Maximal 64 MB/100.000 Zeilen je Geschäftstabelle.
+[Anleitung](docs/SICHERUNG.md). SAF-Dokumentenordner mit persistierter Lese-/Schreibfreigabe. Versioniertes logisches JSON `NLL-Lager-Sicherung`, ab 0.7.0 Formatversion 2 mit 17 Bewegungsfeldern (vorher 14), SHA-256 über Nutzdaten. Format 1 bleibt lesbar: ursprünglichen Hash zuerst prüfen, danach Metadaten ergänzen. Format 2 erfordert neue App; nicht auf 0.6.1 zurückwechseln. Keine rohe SQLite-Kopie. Enthält Materialien, Personen, Lageroptionen und offene/archivierte Bewegungen mit IDs und Snapshots. Maximal 64 MB/100.000 Zeilen je Geschäftstabelle.
 
 Keine Passwörter, Tokens, Kontofreigaben oder Mailwarteschlangen. Nicht verschlüsselt; Hash erkennt Beschädigung und ist kein Manipulationsschutz. Schreiben als `.partial`, schließen, zurücklesen/prüfen, erst dann `.nllbackup`. Nach erfolgreichem neuen Stand sieben gültige Stände behalten; Fremddateien nicht löschen. Android kann geplante Sicherungen verzögern, deshalb für kritische Schritte ausdrücklich synchron sichern.
 
@@ -142,7 +153,7 @@ Zwei Emulatoren waren vorhanden: „Medium Phone API 37.0“ mit älteren Instal
 
 ## Nächste Aufgaben und bekannte Grenzen
 
-1. Veröffentlichung 0.6.1 abgeschlossen: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1. APK und SHA256SUMS hochgeladen; anonymer Download und vollständige Signaturprüfung erfolgreich. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Nächster Schritt ist der Honeywell-Test. 0.6.2-dev ist zusätzlich lokal/GitHub vorbereitet; ein späterer stabiler Release benötigt einen versionCode höher als 11 sowie erneute Signierung.
+1. Veröffentlichung 0.6.1 abgeschlossen: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1. APK und SHA256SUMS hochgeladen; anonymer Download und vollständige Signaturprüfung erfolgreich. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Nächster Schritt ist der Honeywell-Test. 0.7.0-dev ist zusätzlich lokal/GitHub vorbereitet, einschließlich aller Änderungen aus 0.6.2-dev; ein späterer stabiler Release benötigt einen versionCode höher als 12 sowie erneute Signierung.
 2. Auf Honeywell Update von 0.5.0 mit Datenerhalt, Scanner-Eingabe, Passwortschutz und unbekannte Artikel testen.
 3. Echte Firmen-XLSX statt Foto prüfen; neues Berichtslayout und Pflichtbewegungsart mit Betreiber bestätigen.
 4. Sicherungsordner, Wiederherstellung, Android-Installationsfreigabe und späteres In-App-Update auf echter Hardware testen.

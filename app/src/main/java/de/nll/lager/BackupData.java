@@ -16,11 +16,13 @@ final class BackupData {
     static final String[][] COLUMNS={
         {"code","number","description","type","unit","location"},
         {"code","name","location"},
-        {"id","timestamp","code","number","description","type","unit","from_location","to_location","quantity","person_code","person_name","archived_batch","movement_kind"}
+        {"id","timestamp","code","number","description","type","unit","from_location","to_location","quantity","person_code","person_name","archived_batch","movement_kind","reversal_of","cancellation_reason","cancelled_by"}
     };
     static final String[] TABLES={"materials","people","movements"};
     final JSONObject data;
     final String hash;
+    long revision=-1;
+    String databaseId="";
     private BackupData(JSONObject data) throws Exception {this.data=data;this.hash=digest(data.toString().getBytes(StandardCharsets.UTF_8));validate();}
     static BackupData snapshot(Store store,JSONArray legacyLocations) throws Exception {
         SQLiteDatabase db=store.getWritableDatabase();db.beginTransaction();
@@ -32,7 +34,7 @@ final class BackupData {
                     while(c.moveToNext()) {
                         if(rows.length()>=MAX_ROWS) throw new IOException("Zu viele Datensätze für eine Sicherung.");
                         JSONArray row=new JSONArray();
-                        for(int col=0;col<COLUMNS[t].length;col++) row.put(c.isNull(col) ? JSONObject.NULL : t==2 && col==0 ? c.getLong(col) : c.getString(col));
+                        for(int col=0;col<COLUMNS[t].length;col++) row.put(c.isNull(col) ? JSONObject.NULL : t==2 && (col==0 || col==14) ? c.getLong(col) : c.getString(col));
                         rows.put(row);
                     }
                 }
@@ -40,11 +42,11 @@ final class BackupData {
             }
             JSONArray locations=legacyLocations;
             try(Cursor c=db.rawQuery("SELECT value FROM app_settings WHERE key='locations'",null)) {if(c.moveToFirst()) locations=new JSONArray(c.getString(0));}
-            data.put("locations",locations);db.setTransactionSuccessful();return new BackupData(data);
+            data.put("locations",locations);BackupData result=new BackupData(data);result.revision=store.revision();result.databaseId=store.databaseId();db.setTransactionSuccessful();return result;
         } finally {db.endTransaction();}
     }
     byte[] bytes() throws Exception {
-        byte[] bytes=new JSONObject().put("format","NLL-Lager-Sicherung").put("version",1).put("created",OffsetDateTime.now().toString()).put("sha256",hash).put("data",data).toString().getBytes(StandardCharsets.UTF_8);
+        byte[] bytes=new JSONObject().put("format","NLL-Lager-Sicherung").put("version",2).put("created",OffsetDateTime.now().toString()).put("sha256",hash).put("data",data).toString().getBytes(StandardCharsets.UTF_8);
         if(bytes.length>MAX_BYTES) throw new IOException("Sicherung überschreitet 64 MB.");return bytes;
     }
     static BackupData read(InputStream in) throws Exception {
@@ -52,9 +54,15 @@ final class BackupData {
         ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int n;
         while((n=in.read(buffer))!=-1) {if(out.size()+n>MAX_BYTES) throw new IOException("Sicherung überschreitet 64 MB.");out.write(buffer,0,n);}
         JSONObject envelope=new JSONObject(out.toString("UTF-8"));
-        if(!"NLL-Lager-Sicherung".equals(envelope.getString("format")) || envelope.getInt("version")!=1) throw new IOException("Unbekanntes Sicherungsformat.");
-        BackupData backup=new BackupData(envelope.getJSONObject("data"));
-        if(!backup.hash.equals(envelope.getString("sha256"))) throw new IOException("Prüfsumme stimmt nicht. Sicherung beschädigt.");return backup;
+        int version=envelope.getInt("version");
+        if(!"NLL-Lager-Sicherung".equals(envelope.getString("format")) || (version!=1 && version!=2)) throw new IOException("Unbekanntes Sicherungsformat.");
+        JSONObject data=envelope.getJSONObject("data");
+        if(!digest(data.toString().getBytes(StandardCharsets.UTF_8)).equals(envelope.getString("sha256"))) throw new IOException("Prüfsumme stimmt nicht. Sicherung beschädigt.");
+        if(version==1) {
+            JSONArray movements=data.getJSONArray("movements");
+            for(int i=0;i<movements.length();i++) {JSONArray row=movements.getJSONArray(i);if(row.length()!=14)throw new IOException("Ungültige alte Bewegungsstruktur.");row.put(JSONObject.NULL).put("").put("");}
+        }
+        return new BackupData(data);
     }
     static String digest(byte[] bytes) throws Exception {
         StringBuilder out=new StringBuilder();for(byte b:MessageDigest.getInstance("SHA-256").digest(bytes)) out.append(String.format(Locale.ROOT,"%02x",b&255));return out.toString();
@@ -66,9 +74,9 @@ final class BackupData {
             for(int r=0;r<rows.length();r++) {
                 JSONArray row=rows.getJSONArray(r);if(row.length()!=COLUMNS[t].length) throw new IOException("Ungültige Datensatzstruktur.");
                 for(int col=0;col<row.length();col++) {
-                    if(t==2 && col==12 && row.isNull(col)) continue;
+                    if(t==2 && (col==12 || col==14) && row.isNull(col)) continue;
                     Object value=row.get(col);
-                    if(t==2 && col==0) {if(!(value instanceof Number) || row.getLong(0)<=0 || !value.toString().equals(Long.toString(row.getLong(0)))) throw new IOException("Ungültige Bewegungs-ID.");}
+                    if(t==2 && (col==0 || col==14)) {if(!(value instanceof Number) || row.getLong(col)<=0 || !value.toString().equals(Long.toString(row.getLong(col)))) throw new IOException("Ungültige Bewegungs-ID.");}
                     else if(!(value instanceof String) || ((String)value).length()>(t==2 && col==12 ? 1000 : 200) || ((String)value).indexOf('\0')>=0) throw new IOException("Ungültiges Datenfeld.");
                 }
                 String key=row.get(0).toString();if(key.isEmpty() || !keys.add(key)) throw new IOException("Leerer oder doppelter Schlüssel.");
@@ -76,9 +84,23 @@ final class BackupData {
                 if(t==1 && row.getString(1).isEmpty()) throw new IOException("Ungültiger Personeneintrag.");
                 if(t==2) {
                     OffsetDateTime.parse(row.getString(1));Rules.quantity(row.getString(9));Rules.locations(row.getString(7),row.getString(8));
-                    if(!Arrays.asList("","Entnahme","Rückgabe","Umlagerung").contains(row.getString(13))) throw new IOException("Ungültige Bewegungsart.");
+                    if(!Arrays.asList("","Entnahme","Rückgabe","Umlagerung","Storno").contains(row.getString(13))) throw new IOException("Ungültige Bewegungsart.");
                 }
             }
+        }
+        Map<Long,JSONArray> movements=new HashMap<>();Set<Long> reversed=new HashSet<>();
+        JSONArray list=data.getJSONArray("movements");for(int i=0;i<list.length();i++) movements.put(list.getJSONArray(i).getLong(0),list.getJSONArray(i));
+        for(int i=0;i<list.length();i++) {
+            JSONArray row=list.getJSONArray(i);
+            if(row.isNull(14)) {
+                if("Storno".equals(row.getString(13)) || !row.getString(15).isEmpty() || !row.getString(16).isEmpty())throw new IOException("Storno-Bezug fehlt.");
+                continue;
+            }
+            long id=row.getLong(14);JSONArray original=movements.get(id);
+            if(original==null || !original.isNull(14) || id==row.getLong(0) || !reversed.add(id) || !"Storno".equals(row.getString(13)))throw new IOException("Ungültiger oder doppelter Storno-Bezug.");
+            Rules.required(row.getString(15),"Stornogrund");Rules.required(row.getString(16),"Ausgeführt von");
+            for(int col:new int[]{2,3,5,6,9,10,11}) if(!row.getString(col).equals(original.getString(col)))throw new IOException("Storno passt nicht zur Originalbuchung.");
+            if(!row.getString(7).equals(original.getString(8)) || !row.getString(8).equals(original.getString(7)))throw new IOException("Storno-Lager passen nicht.");
         }
         JSONArray locations=data.getJSONArray("locations");if(locations.length()>10000) throw new IOException("Zu viele Lager.");Set<String> seen=new HashSet<>();
         for(int i=0;i<locations.length();i++) {String value=Rules.required(locations.getString(i),"Lager");if(!seen.add(value.toLowerCase(Locale.ROOT))) throw new IOException("Doppeltes Lager.");}
@@ -92,7 +114,7 @@ final class BackupData {
                     JSONArray row=rows.getJSONArray(r);ContentValues values=new ContentValues();
                     for(int col=0;col<row.length();col++) {
                         if(row.isNull(col)) values.putNull(COLUMNS[t][col]);
-                        else if(t==2 && col==0) values.put(COLUMNS[t][col],row.getLong(col));
+                        else if(t==2 && (col==0 || col==14)) values.put(COLUMNS[t][col],row.getLong(col));
                         else values.put(COLUMNS[t][col],row.getString(col));
                     }
                     db.insertOrThrow(TABLES[t],null,values);

@@ -26,7 +26,7 @@ public final class Store extends SQLiteOpenHelper {
         Person(String code, String name, String location) { this.code = code; this.name = name; this.location=location; }
     }
     private final Context app;
-    public Store(Context context) { super(context, "nll-lager.db", null, 6);app=context.getApplicationContext(); }
+    public Store(Context context) { super(context, "nll-lager.db", null, 7);app=context.getApplicationContext(); }
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE materials (code TEXT PRIMARY KEY, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE people (code TEXT PRIMARY KEY, name TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
@@ -35,6 +35,7 @@ public final class Store extends SQLiteOpenHelper {
         createMailTables(db);
         db.execSQL("CREATE TABLE app_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)");
         db.execSQL("ALTER TABLE movements ADD COLUMN movement_kind TEXT NOT NULL DEFAULT ''");
+        upgradeSeven(db);
     }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if(oldVersion<2) {
@@ -45,6 +46,66 @@ public final class Store extends SQLiteOpenHelper {
         else if(oldVersion<4) db.execSQL("ALTER TABLE mail_commands ADD COLUMN auto_archive INTEGER NOT NULL DEFAULT 0");
         if(oldVersion<6) db.execSQL("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)");
         if(oldVersion<5) db.execSQL("ALTER TABLE movements ADD COLUMN movement_kind TEXT NOT NULL DEFAULT ''");
+        if(oldVersion<7) upgradeSeven(db);
+    }
+    private static void upgradeSeven(SQLiteDatabase db) {
+        java.util.Set<String> columns=new java.util.HashSet<>();try(Cursor c=db.rawQuery("PRAGMA table_info(movements)",null)){while(c.moveToNext())columns.add(c.getString(1));}
+        if(!columns.contains("reversal_of")) db.execSQL("ALTER TABLE movements ADD COLUMN reversal_of INTEGER");
+        if(!columns.contains("cancellation_reason")) db.execSQL("ALTER TABLE movements ADD COLUMN cancellation_reason TEXT NOT NULL DEFAULT ''");
+        if(!columns.contains("cancelled_by")) db.execSQL("ALTER TABLE movements ADD COLUMN cancelled_by TEXT NOT NULL DEFAULT ''");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS movements_one_reversal ON movements(reversal_of) WHERE reversal_of IS NOT NULL");
+        ContentValues value=new ContentValues();value.put("key","database_id");value.put("value",java.util.UUID.randomUUID().toString());db.insertWithOnConflict("app_settings",null,value,SQLiteDatabase.CONFLICT_IGNORE);
+        db.execSQL("INSERT OR IGNORE INTO app_settings(key,value) VALUES('data_revision','0')");
+        for(String table:new String[]{"materials","people","movements","app_settings"}) for(String operation:new String[]{"INSERT","UPDATE","DELETE"}) {
+            String condition="app_settings".equals(table) ? " WHEN "+("DELETE".equals(operation) ? "OLD" : "NEW")+".key='locations'" : "";
+            db.execSQL("CREATE TRIGGER IF NOT EXISTS revision_"+table+"_"+operation+" AFTER "+operation+" ON "+table+condition+" BEGIN UPDATE app_settings SET value=CAST(value AS INTEGER)+1 WHERE key='data_revision'; END");
+        }
+    }
+    String databaseId() {try(Cursor c=getReadableDatabase().rawQuery("SELECT value FROM app_settings WHERE key='database_id'",null)){return c.moveToFirst() ? c.getString(0) : "";}}
+    long revision() {try(Cursor c=getReadableDatabase().rawQuery("SELECT value FROM app_settings WHERE key='data_revision'",null)){return c.moveToFirst() ? c.getLong(0) : 0;}}
+    static final class Movement {
+        final String[] values;final long id;final boolean reversed;
+        Movement(Cursor c) {values=new String[17];for(int i=0;i<17;i++) values[i]=c.isNull(i) ? null : c.getString(i);id=c.getLong(0);reversed=c.getInt(17)!=0;}
+        boolean isReversal(){return values[14]!=null;}
+        String label(){return "#"+id+" · "+values[3]+" · "+values[4]+"\n"+values[9]+" "+values[6]+"  |  "+values[7]+" → "+values[8]+"\n"+values[11]+" · "+values[1]+" · "+values[13]+(reversed ? "\nStorniert – Gegenbuchung vorhanden" : "")+(isReversal() ? "\nBezug: #"+values[14]+" · Grund: "+values[15]+" · Ausgeführt von: "+values[16] : "");}
+    }
+    Movement movement(long id) {
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT m.*,EXISTS(SELECT 1 FROM movements r WHERE r.reversal_of=m.id) FROM movements m WHERE m.id=?",new String[]{Long.toString(id)})){return c.moveToFirst() ? new Movement(c) : null;}
+    }
+    List<Movement> movements(boolean archived) {
+        List<Movement> result=new ArrayList<>();
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT m.*,EXISTS(SELECT 1 FROM movements r WHERE r.reversal_of=m.id) FROM movements m WHERE archived_batch IS "+(archived ? "NOT NULL" : "NULL")+" ORDER BY m.id DESC LIMIT 100",null)){while(c.moveToNext())result.add(new Movement(c));}return result;
+    }
+    long cancelMovement(long id,String reason,String actor) {
+        reason=Rules.required(reason,"Stornogrund");actor=Rules.required(actor,"Ausgeführt von");
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try {
+            Movement original=movement(id);
+            if(original==null || original.isReversal() || original.reversed) throw new IllegalArgumentException("Diese Buchung kann nicht erneut storniert werden.");
+            String[] row=original.values;ContentValues v=new ContentValues();
+            v.put("timestamp",new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX",Locale.ROOT).format(new Date()));
+            for(int i:new int[]{2,3,5,6,9,10,11}) v.put(BackupData.COLUMNS[2][i],row[i]);
+            String description="Storno #"+id+" ("+reason+"): "+row[4];v.put("description",description.substring(0,Math.min(200,description.length())));
+            v.put("from_location",row[8]);v.put("to_location",row[7]);v.put("movement_kind","Storno");v.put("reversal_of",id);v.put("cancellation_reason",reason);v.put("cancelled_by",actor);
+            long reversal=db.insertOrThrow("movements",null,v);db.setTransactionSuccessful();Backup.request(app);return reversal;
+        } finally {db.endTransaction();}
+    }
+    static final class DuplicateMovement extends IllegalArgumentException {DuplicateMovement(){super("Mögliche Doppelbuchung innerhalb von 10 Sekunden.");}}
+    boolean recentDuplicate(Material material,String from,String to,String amount,Person person,String kind,long now) {
+        if(material==null || person==null) return false;
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT code,from_location,to_location,quantity,person_code,movement_kind,timestamp FROM movements m WHERE reversal_of IS NULL AND NOT EXISTS(SELECT 1 FROM movements r WHERE r.reversal_of=m.id) ORDER BY id DESC LIMIT 1",null)) {
+            if(!c.moveToFirst())return false;
+            long elapsed=now-java.time.OffsetDateTime.parse(c.getString(6)).toInstant().toEpochMilli();
+            return elapsed>=0 && elapsed<=10000 && material.code.equals(c.getString(0)) && from.equals(c.getString(1)) && to.equals(c.getString(2)) && Rules.quantity(amount).equals(c.getString(3)) && person.code.equals(c.getString(4)) && kind.equals(c.getString(5));
+        }
+    }
+    long bookChecked(Material material,String from,String to,String amount,Person person,String kind,boolean allowDuplicate) {
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
+        try {
+            if(material==null || person==null || material(material.code)==null || person(person.code)==null) throw new IllegalArgumentException("Artikel oder Person nicht mehr vorhanden. Bitte neu auswählen.");
+            if(!allowDuplicate && recentDuplicate(material,from,to,amount,person,kind,System.currentTimeMillis()))throw new DuplicateMovement();
+            long id=book(material,from,to,amount,person,kind);db.setTransactionSuccessful();return id;
+        }finally{db.endTransaction();}
     }
     private static void createMailTables(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE mail_commands (id TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT NOT NULL, cutoff INTEGER NOT NULL DEFAULT 0, result TEXT NOT NULL, created INTEGER NOT NULL, auto_archive INTEGER NOT NULL DEFAULT 0)");
@@ -87,6 +148,16 @@ public final class Store extends SQLiteOpenHelper {
         if(getWritableDatabase().update(people ? "people" : "materials",values,"code=?",new String[]{code})!=1) throw new IllegalArgumentException("Eintrag nicht gefunden.");
         Backup.request(app);
     }
+    void updatePerson(String original,String code,String name,String location) {
+        ContentValues values=new ContentValues();values.put("code",Rules.required(code,"Personencode"));values.put("name",Rules.required(name,"Name"));values.put("location",optionalLocation(location));
+        if(getWritableDatabase().update("people",values,"code=?",new String[]{original})!=1) throw new IllegalArgumentException("Person nicht mehr vorhanden.");Backup.request(app);
+    }
+    void updateMaterial(String original,String code,String number,String description,String type,String unit,String location) {
+        if(!java.util.Arrays.asList("Material","Kältemittel").contains(type)) throw new IllegalArgumentException("Ungültige Artikelart.");
+        ContentValues values=new ContentValues();values.put("code",Rules.required(code,"Scancode"));values.put("number",Rules.required(number,"Materialnummer"));values.put("description",Rules.required(description,"Beschreibung"));
+        values.put("type",type);values.put("unit",Rules.required(unit,"Einheit"));values.put("location",optionalLocation(location));
+        if(getWritableDatabase().update("materials",values,"code=?",new String[]{original})!=1) throw new IllegalArgumentException("Material nicht mehr vorhanden.");Backup.request(app);
+    }
     public void deleteEntry(String code,boolean people) {
         if(getWritableDatabase().delete(people ? "people" : "materials","code=?",new String[]{Rules.required(code,"Code")})!=1)
             throw new IllegalArgumentException("Eintrag nicht mehr vorhanden.");
@@ -122,6 +193,7 @@ public final class Store extends SQLiteOpenHelper {
         v.put("person_code", person.code); v.put("person_name", person.name);
         long id=getWritableDatabase().insertOrThrow("movements", null, v);Backup.request(app);return id;
     }
+    static final class ImportChanged extends IllegalArgumentException {ImportChanged(){super("Die Daten wurden seit der Vorschau geändert. Bitte erneut prüfen.");}}
     enum ImportPolicy { REJECT, SKIP, UPDATE }
     static final class ImportConflict extends IllegalArgumentException {
         final int count;
@@ -134,9 +206,11 @@ public final class Store extends SQLiteOpenHelper {
     }
     public void importRows(List<String[]> rows,boolean people) {importRows(rows,people,ImportPolicy.REJECT,WorkProgress.NONE);}
     void importRows(List<String[]> rows,boolean people,WorkProgress progress) {importRows(rows,people,ImportPolicy.REJECT,progress);}
-    int[] importRows(List<String[]> rows,boolean people,ImportPolicy policy,WorkProgress progress) {
+    int[] importRows(List<String[]> rows,boolean people,ImportPolicy policy,WorkProgress progress) {return importRows(rows,people,policy,progress,-1);}
+    int[] importRows(List<String[]> rows,boolean people,ImportPolicy policy,WorkProgress progress,long expectedRevision) {
         SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
         try {
+            if(expectedRevision>=0 && revision()!=expectedRevision)throw new ImportChanged();
             java.util.Set<String> codes=new java.util.HashSet<>();
             for(String[] row:rows) if(!codes.add(Rules.required(row[0],"Code"))) throw new IllegalArgumentException("Doppelter Code innerhalb der Datei: "+row[0]);
             int conflicts=importConflicts(rows,people);

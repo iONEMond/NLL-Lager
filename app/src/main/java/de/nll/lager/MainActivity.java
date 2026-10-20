@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
     private Spinner from, to, movementKind;
     private AdminSettings settings;
     private boolean adminUnlocked;
+    private boolean bookingDialogOpen;
     private boolean mailSetupExpanded;
     private OperationProgress operationProgress;
     private OperationProgress operation(String title,String message) {
@@ -122,6 +123,7 @@ public class MainActivity extends Activity {
         TextView heading = text(title, 25, INK); heading.setTypeface(null, Typeface.BOLD);
         heading.setPadding(dp(16),dp(20),dp(16),dp(20)); heading.setBackground(shape(Color.WHITE,0));
         text(subtitle, 16, MUTED);
+        if("home".equals(screen) || "settings".equals(screen) || "backup".equals(screen)) text(Backup.statusLine(this,store),14,MUTED);
         if (!notice.isEmpty()) {
             boolean failed = notice.contains("fehlgeschlagen");
             TextView n = text(notice, 17, failed ? Color.rgb(151,47,32) : BLUE); n.setPadding(dp(12),dp(12),dp(12),dp(12));
@@ -685,6 +687,7 @@ public class MainActivity extends Activity {
         } catch (IllegalArgumentException e) { error(e.getMessage()); }
     }
     private void confirmBooking() {
+        if(bookingDialogOpen) return;
         try {
             if (selected==null) throw new IllegalArgumentException("Bitte zuerst einen bekannten Materialcode übernehmen.");
             if (!scan.getText().toString().trim().equals(selected.code)) throw new IllegalArgumentException("Der Code wurde geändert. Bitte zuerst „Code übernehmen“ drücken.");
@@ -693,16 +696,22 @@ public class MainActivity extends Activity {
             if(!sourceOptions().contains(f)) throw new IllegalArgumentException("Bitte ein eingerichtetes Lager auswählen.");
             if(!destinationOptions().contains(t)) throw new IllegalArgumentException("Bitte ein eingerichtetes Ziellager auswählen.");
             Rules.locations(f,t); hideKeyboard();
-            new AlertDialog.Builder(this).setTitle("Bewegung bestätigen")
-                .setMessage(selected.number+" · "+selected.description+"\n\n"+q+" "+selected.unit+"\n"+f+" → "+t+"\nBewegungsart: "+kind+"\nPerson: "+person.name)
-                .setNegativeButton("Zurück",null).setPositiveButton("Jetzt speichern",(d,w) -> {
+            final Store.Material article=selected;final Store.Person employee=person;
+            boolean duplicate=store.recentDuplicate(article,f,t,q,employee,kind,System.currentTimeMillis());
+            bookingDialogOpen=true;java.util.concurrent.atomic.AtomicBoolean submitted=new java.util.concurrent.atomic.AtomicBoolean();
+            AlertDialog confirmation=new AlertDialog.Builder(this).setTitle(duplicate ? "Mögliche Doppelbuchung" : "Bewegung bestätigen")
+                .setMessage((duplicate ? "Eine identische Buchung wurde vor höchstens 10 Sekunden erfasst. Erneut buchen?\n\n" : "")+article.number+" · "+article.description+"\n\n"+q+" "+article.unit+"\n"+f+" → "+t+"\nBewegungsart: "+kind+"\nPerson: "+employee.name)
+                .setNegativeButton("Zurück",null).setPositiveButton(duplicate ? "Trotzdem buchen" : "Jetzt speichern",(d,w) -> {
+                    if(!submitted.compareAndSet(false,true))return;
                     try {
-                        store.book(selected,f,t,q,person,kind);
+                        store.bookChecked(article,f,t,q,employee,kind,duplicate);
                         prefs.edit().putString("from",f).apply();
-                        notice="✓ Bewegung gespeichert: "+q+" "+selected.unit;
-                        selected=null; draftScan=""; draftAmount="1"; screen="browse"; render();
-                    } catch (Exception e) { error("Bewegung konnte nicht gespeichert werden. Bitte erneut versuchen."); }
-                }).show();
+                        notice="✓ Bewegung gespeichert: "+q+" "+article.unit;
+                        selected=null;draftScan="";draftAmount="1";screen="browse";render();
+                    } catch(Store.DuplicateMovement e) {error("Inzwischen wurde eine identische Buchung erfasst. Bitte erneut prüfen und bestätigen.");}
+                    catch(Exception e) {error("Bewegung konnte nicht gespeichert werden: "+e.getMessage());}
+                }).create();
+            confirmation.setOnDismissListener(d -> bookingDialogOpen=false);confirmation.show();
         } catch (IllegalArgumentException e) { error(e.getMessage()); }
     }
     private void catalog(boolean people) {
@@ -744,9 +753,16 @@ public class MainActivity extends Activity {
         Store.Material existingMaterial=people ? null : store.material(code);
         if(people ? existingPerson==null : existingMaterial==null) {error("Eintrag nicht mehr vorhanden.");return;}
         String current=people ? existingPerson.location : existingMaterial.location;
+        EditText editCode=dialogField(layout,people ? "Personencode" : "Scancode",code);
+        EditText editName=dialogField(layout,people ? "Name" : "Beschreibung",people ? existingPerson.name : existingMaterial.description);
+        EditText editNumber=people ? null : dialogField(layout,"Materialnummer",existingMaterial.number);
+        CheckBox editType=new CheckBox(this);editType.setText("Kältemittel");
+        if(!people) {editType.setChecked("Kältemittel".equals(existingMaterial.type));layout.addView(editType);}
+        EditText editUnit=people ? null : dialogField(layout,"Einheit",existingMaterial.unit);
         EditText location=people ? dialogField(layout,"Lagernummer",current) : null;
-        Spinner warehouse=people ? null : warehouseDropdown(layout,"Lager",settings.locations(),current);
-        AlertDialog dialog=form(people ? "Mitarbeiterlager zuordnen" : "Materiallager zuordnen",layout);
+        java.util.List<String> options=new java.util.ArrayList<>(settings.locations());if(!current.isEmpty() && !options.contains(current)) options.add(current);
+        Spinner warehouse=people ? null : warehouseDropdown(layout,"Lager",options,current);
+        AlertDialog dialog=form(people ? "Person bearbeiten" : "Material bearbeiten",layout);
         Button delete=new Button(this);delete.setText(people ? "Person löschen" : "Material löschen");layout.addView(delete);
         delete.setOnClickListener(v -> {
             if(!requireAdmin() || mailBusy()) return;
@@ -764,12 +780,18 @@ public class MainActivity extends Activity {
                 }).show();
         });
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            if(!requireAdmin()) return;
+            if(!requireAdmin() || mailBusy()) return;
+            if(!MailSync.BUSY.compareAndSet(false,true)) {error("Hintergrundverarbeitung läuft.");return;}
             try {
-                store.assignLocation(code,people ? location.getText().toString() : spinnerValue(warehouse),people);
-                if(people && person!=null && person.code.equals(code)) {person=store.person(code); draftTo=person.location;}
-                dialog.dismiss(); render();
-            } catch(IllegalArgumentException e) {error(e.getMessage());}
+                String newCode=Rules.required(editCode.getText().toString(),"Code");
+                if(people) store.updatePerson(code,newCode,editName.getText().toString(),location.getText().toString());
+                else store.updateMaterial(code,newCode,editNumber.getText().toString(),editName.getText().toString(),editType.isChecked() ? "Kältemittel" : "Material",editUnit.getText().toString(),spinnerValue(warehouse));
+                if(people && person!=null && person.code.equals(code)) {person=store.person(newCode);draftTo=person.location;}
+                if(!people && selected!=null && selected.code.equals(code)) {selected=null;draftScan="";}
+                dialog.dismiss();notice="✓ Stammdaten gespeichert · frühere Buchungen bleiben unverändert";render();
+            } catch(SQLiteConstraintException e) {editCode.setError("Dieser Code existiert bereits.");}
+            catch(IllegalArgumentException e) {error(e.getMessage());}
+            finally {MailSync.BUSY.set(false);}
         });
     }
 
@@ -833,9 +855,38 @@ public class MainActivity extends Activity {
         base(archived ? "Archiv" : "Offene Bewegungen", store.count(archived)+" Einträge · Anzeige der letzten 100");
         button(archived ? "Archiv erneut exportieren" : "Bericht exportieren & archivieren",true,() -> beginExport(archived));
         button(archived ? "Offene Bewegungen anzeigen" : "Archiv anzeigen",false,() -> {screen=archived ? "history" : "archive"; notice=""; render();});
-        List<String> entries=store.history(archived);
+        List<Store.Movement> entries=store.movements(archived);
         if(entries.isEmpty()) text("Keine Bewegungen vorhanden.",18,MUTED);
-        for(String s:entries) listCard(s);
+        for(Store.Movement entry:entries) {
+            listCard(entry.label());
+            if(!entry.reversed && !entry.isReversal()) button("Buchung #"+entry.id+" stornieren / korrigieren",false,() -> cancelBooking(entry.id));
+        }
+    }
+    private void cancelBooking(long id) {
+        if(!requireAdmin() || mailBusy()) return;
+        Store.Movement original=store.movement(id);if(original==null || original.reversed || original.isReversal()){error("Buchung bereits storniert oder nicht mehr vorhanden.");return;}
+        LinearLayout layout=dialogBody();TextView info=new TextView(this);info.setText(original.label()+"\n\nDas Original bleibt erhalten. Eine neue Gegenbuchung mit Bewegungsart Storno und umgekehrten Lagern wird für den nächsten Bericht erfasst. Eine neue korrigierte Buchung muss anschließend separat bestätigt werden.");layout.addView(info);
+        EditText reason=dialogField(layout,"Stornogrund","");ScrollView scroll=new ScrollView(this);scroll.addView(layout);
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Buchung #"+id+" stornieren?").setView(scroll).setNegativeButton("Abbrechen",null).setPositiveButton("Nur stornieren",null).setNeutralButton("Stornieren & neu erfassen",null).create();dialog.show();
+        android.view.View.OnClickListener cancel=v -> {
+            if(!requireAdmin() || mailBusy()) return;
+            String why;try{why=Rules.required(reason.getText().toString(),"Stornogrund");}catch(IllegalArgumentException e){reason.setError(e.getMessage());return;}
+            boolean replace=v==dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+            if(!MailSync.BUSY.compareAndSet(false,true)){error("Hintergrundverarbeitung läuft.");return;}
+            try {
+                long reversal=store.cancelMovement(id,why,person==null ? "Administration" : person.code);
+                dialog.dismiss();notice="✓ Storno #"+reversal+" zu Buchung #"+id+" erfasst";
+                if(replace) {
+                    Store.Material item=store.material(original.values[2]);Store.Person employee=store.person(original.values[10]);
+                    if(item!=null && employee!=null) {
+                        person=employee;selected=item;module=item.type;draftScan=item.code;draftFrom=original.values[7];draftTo=original.values[8];draftAmount=original.values[9];draftKind=original.values[13];screen="book";
+                        notice+=" · korrigierte Buchung noch nicht gespeichert";
+                    } else notice+=" · Artikel/Person fehlt im Katalog; neue Buchung bitte nach Stammdatenpflege erfassen";
+                }
+                render();
+            }catch(Exception e){error(e.getMessage());}finally{MailSync.BUSY.set(false);}
+        };
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(cancel);dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(cancel);
     }
     private void beginExport(boolean archived) {
         if(!requireAdmin()) return;
@@ -938,10 +989,11 @@ public class MainActivity extends Activity {
                 }
                 List<String[]> rows=ExcelImport.read(temporary,people,progress);
                 progress.update(0,0,"Vorhandene Codes prüfen …");
-                int conflicts=store.importConflicts(rows,people);
+                ImportPreview preview=ImportPreview.read(store,rows,people,progress);
+                int conflicts=preview.changed+preview.unchanged;
                 runOnUiThread(() -> {
                     writing=false;if(isFinishing() || isDestroyed()) return;progress.dismiss();
-                    confirmImport(rows,people,conflicts);
+                    confirmImport(rows,people,conflicts,preview);
                 });
             } catch(Exception e) {
                 String message=e instanceof java.util.zip.ZipException ? "Bitte eine echte Excel-Datei (.xlsx) verwenden. Alte .xls-Dateien zuerst als .xlsx speichern." : e.getMessage();
@@ -949,34 +1001,62 @@ public class MainActivity extends Activity {
             } finally {if(temporary!=null) temporary.delete();}
         },"excel-read").start();
     }
-    private void confirmImport(List<String[]> rows,boolean people,int conflicts) {
+    private void confirmImport(List<String[]> rows,boolean people,int conflicts) {confirmImport(rows,people,conflicts,null);}
+    private void confirmImport(List<String[]> rows,boolean people,int conflicts,ImportPreview preview) {
         if(!requireAdmin()) return;
         String[] first=rows.get(0);
+        LinearLayout previewArea=dialogBody();Button details=new Button(this);details.setText("Änderungen ansehen");previewArea.addView(details);
+        details.setOnClickListener(v -> {if(preview==null)showImportPreview(rows,people);else importPreviewPage(preview,0);});
         AlertDialog.Builder choice=new AlertDialog.Builder(this)
-            .setTitle(rows.size()+" "+(people ? "Personen" : "Materialien")+" importieren?")
-            .setMessage("Erster Eintrag: "+first[0]+" · "+first[people ? 1 : 2]+"\n\n"+
+            .setView(previewArea).setTitle(rows.size()+" "+(people ? "Personen" : "Materialien")+" importieren?")
+            .setMessage((preview==null ? "" : preview.summary()+"\n\n")+"Erster Eintrag: "+first[0]+" · "+first[people ? 1 : 2]+"\n\n"+
                 (conflicts>0 ? conflicts+" Codes sind bereits vorhanden. Was soll mit diesen Einträgen geschehen? Neue Einträge werden ergänzt. Nicht mitgelieferte Zusatzspalten und historische Buchungen bleiben erhalten." : "Neue Einträge werden ergänzt. Die Übernahme erfolgt vollständig oder gar nicht."))
             .setNegativeButton("Abbrechen",null);
-        if(conflicts>0) choice.setNeutralButton("Vorhandene überspringen",(d,w) -> saveImport(rows,people,Store.ImportPolicy.SKIP))
-            .setPositiveButton("Vorhandene aktualisieren",(d,w) -> saveImport(rows,people,Store.ImportPolicy.UPDATE));
-        else choice.setPositiveButton("Importieren",(d,w) -> saveImport(rows,people,Store.ImportPolicy.REJECT));
+        if(conflicts>0) choice.setNeutralButton("Vorhandene überspringen",(d,w) -> saveImport(rows,people,Store.ImportPolicy.SKIP,preview==null ? -1 : preview.revision))
+            .setPositiveButton("Vorhandene aktualisieren",(d,w) -> saveImport(rows,people,Store.ImportPolicy.UPDATE,preview==null ? -1 : preview.revision));
+        else choice.setPositiveButton("Importieren",(d,w) -> saveImport(rows,people,Store.ImportPolicy.REJECT,preview==null ? -1 : preview.revision));
         choice.show();
     }
+    private void showImportPreview(List<String[]> rows,boolean people) {
+        if(writing || !requireAdmin()) return;
+        writing=true;OperationProgress progress=operation("Importvorschau","Gelieferte Felder vergleichen …");
+        new Thread(() -> {
+            ImportPreview preview=null;String failure="";
+            try{preview=ImportPreview.read(store,rows,people,progress);}catch(Exception e){failure=e.getMessage();}
+            final ImportPreview result=preview;final String errorMessage=failure;
+            runOnUiThread(() -> {writing=false;if(isDestroyed() || isFinishing())return;progress.dismiss();if(!requireAdmin())return;if(result==null)error(errorMessage);else importPreviewPage(result,0);});
+        },"import-preview").start();
+    }
+    private void importPreviewPage(ImportPreview preview,int start) {
+        if(!requireAdmin()) return;
+        LinearLayout layout=dialogBody();TextView content=new TextView(this);content.setTextSize(16);
+        int end=Math.min(preview.entries.size(),start+20);
+        StringBuilder text=new StringBuilder(preview.summary()).append("\nEinträge ").append(start+1).append("–").append(end).append(" von ").append(preview.entries.size()).append("\n");
+        for(int i=start;i<end;i++)text.append("\n").append(preview.entries.get(i)).append("\n");
+        content.setText(text.toString());content.setTextIsSelectable(true);layout.addView(content);ScrollView scroll=new ScrollView(this);scroll.addView(layout);
+        AlertDialog.Builder dialog=new AlertDialog.Builder(this).setTitle("Importvorschau · keine Daten geändert").setView(scroll).setNegativeButton("Schließen",null);
+        if(end<preview.entries.size())dialog.setPositiveButton("Nächste Seite",(d,w) -> importPreviewPage(preview,end));
+        if(start>0)dialog.setNeutralButton("Vorherige Seite",(d,w) -> importPreviewPage(preview,Math.max(0,start-20)));
+        dialog.show();
+    }
     private void saveImport(List<String[]> rows,boolean people) {saveImport(rows,people,Store.ImportPolicy.REJECT);}
-    private void saveImport(List<String[]> rows,boolean people,Store.ImportPolicy policy) {
+    private void saveImport(List<String[]> rows,boolean people,Store.ImportPolicy policy) {saveImport(rows,people,policy,-1);}
+    private void saveImport(List<String[]> rows,boolean people,Store.ImportPolicy policy,long revision) {
         if(!requireAdmin() || mailBusy()) return;
         if(!MailSync.BUSY.compareAndSet(false,true)) {error("Hintergrundverarbeitung läuft. Bitte erneut versuchen.");return;}
         writing=true;
         OperationProgress progress=operation("Daten werden importiert …","Import vorbereiten …");
         new Thread(() -> {
-            String failure=null;int conflicts=0;int[] result=null;
-            try {result=store.importRows(rows,people,policy,progress);}
+            String failure=null;int conflicts=0;int[] result=null;ImportPreview refreshed=null;
+            try {result=store.importRows(rows,people,policy,progress,revision);}
+            catch(Store.ImportChanged e) {try{refreshed=ImportPreview.read(store,rows,people,progress);}catch(Exception failureReading){failure="Neue Vorschau konnte nicht gelesen werden.";}}
             catch(Store.ImportConflict e) {conflicts=e.count;}
             catch(Exception e) {failure=e.getMessage()==null ? "Import konnte nicht gespeichert werden." : e.getMessage();}
             finally {MailSync.BUSY.set(false);}
-            final String errorMessage=failure;final int collisionCount=conflicts;final int[] counts=result;
+            final String errorMessage=failure;final int collisionCount=conflicts;final int[] counts=result;final ImportPreview updatedPreview=refreshed;
             runOnUiThread(() -> {
                 writing=false;if(isFinishing() || isDestroyed()) return;progress.dismiss();
+                if(updatedPreview!=null) {notice="Daten seit Vorschau geändert · bitte erneut prüfen";confirmImport(rows,people,updatedPreview.changed+updatedPreview.unchanged,updatedPreview);return;}
                 if(collisionCount>0) {confirmImport(rows,people,collisionCount);return;}
                 if(errorMessage!=null) error("Import vollständig zurückgerollt. Keine Daten geändert.\n\n"+errorMessage);
                 else {

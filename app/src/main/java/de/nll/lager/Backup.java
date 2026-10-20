@@ -27,7 +27,7 @@ final class Backup {
         if((flags&rw)!=rw) throw new IOException("Bitte einen les- und beschreibbaren Ordner auswählen.");
         c.getContentResolver().takePersistableUriPermission(tree,flags&rw);
         if(!DocumentsContract.isTreeUri(tree)) throw new IOException("Bitte einen Ordner auswählen.");
-        prefs(c).edit().putString("tree",tree.toString()).remove("hash").putString("status","Ordner gewählt · erste Sicherung steht aus").commit();request(c);
+        prefs(c).edit().putString("tree",tree.toString()).remove("hash").remove("last").remove("latest").remove("revision").remove("databaseId").putString("status","Ordner gewählt · erste Sicherung steht aus").commit();request(c);
     }
     static JSONArray legacyLocations(Context c) throws Exception {return new JSONArray(c.getSharedPreferences("admin-settings",0).getString("locations","[]"));}
     static BackupData snapshot(Context c) throws Exception {try(Store store=new Store(c)) {return BackupData.snapshot(store,legacyLocations(c));}}
@@ -38,7 +38,7 @@ final class Backup {
             if(!force && backup.hash.equals(prefs(c).getString("hash",""))) {
                 String latest=prefs(c).getString("latest","");
                 if(!latest.isEmpty()) try(Cursor cursor=c.getContentResolver().query(Uri.parse(latest),new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID},android.os.Bundle.EMPTY,null)) {
-                    if(cursor!=null && cursor.moveToFirst()) return false;
+                    if(cursor!=null && cursor.moveToFirst()) {recordRevision(c,backup);return false;}
                 } catch(RuntimeException ignored) { /* A removed file must be recreated. */ }
             }
             Uri tree=Uri.parse(chosen),parent=DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));
@@ -53,10 +53,19 @@ final class Backup {
             }
             Uri completed=DocumentsContract.renameDocument(c.getContentResolver(),document,name);
             if(completed==null) throw new IOException("Sicherung geschrieben, aber nicht abgeschlossen. Ältere Stände bleiben erhalten.");
-            prefs(c).edit() .putString("latest",completed.toString()).putString("hash",backup.hash).putLong("last",System.currentTimeMillis()).putString("status","Sicherung erfolgreich · "+backup.summary()).commit();
+            prefs(c).edit() .putString("latest",completed.toString()).putString("hash",backup.hash).putLong("revision",backup.revision).putString("databaseId",backup.databaseId).putLong("last",System.currentTimeMillis()).putString("status","Sicherung erfolgreich · "+backup.summary()).commit();
             try {prune(c,tree,completed);} catch(Exception e) {status(c,"Sicherung erfolgreich · ältere Stände konnten nicht bereinigt werden.");}
             return true;
         }
+    }
+    private static void recordRevision(Context c,BackupData backup) {prefs(c).edit().putLong("revision",backup.revision).putString("databaseId",backup.databaseId).commit();}
+    static String statusLine(Context c,Store store) {
+        SharedPreferences p=prefs(c);long last=p.getLong("last",0);
+        if(p.getString("tree","").isEmpty())return "Sicherung: nicht eingerichtet";
+        if(last==0)return "Sicherung: erster geprüfter Stand steht aus";
+        String time=new SimpleDateFormat("dd.MM. HH:mm",Locale.GERMANY).format(new Date(last));
+        boolean unchanged=store.databaseId().equals(p.getString("databaseId","")) && store.revision()==p.getLong("revision",-1);
+        return (unchanged ? "Keine Änderungen seit letzter Sicherung" : "Nicht gesicherte Änderungen vorhanden")+" · "+time;
     }
     static final class Document {final String name;final Uri uri;Document(String name,Uri uri) {this.name=name;this.uri=uri;}}
     static List<Document> documents(Context c,Uri tree) throws Exception {

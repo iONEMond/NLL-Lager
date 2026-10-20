@@ -7,8 +7,8 @@ android {
         applicationId = 'de.nll.lager'
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = '0.6.2-dev'
+        versionCode = 12
+        versionName = '0.7.0-dev'
         testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
