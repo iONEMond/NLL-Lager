@@ -2,7 +2,11 @@
 
 Neueste veröffentlichte APK: **0.6.0**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
-## 0.6.1 – in Entwicklung, nicht veröffentlicht
+## 0.6.1 – Release vorbereitet, nicht veröffentlicht
+
+20.10.2026: Release-Kandidat 0.6.1 mit versionCode 10 vorbereitet (höher als Entwicklungsstand 9). Signierung mit bestehendem Release-Schlüssel steht aus: Android Studio benötigt die nicht gespeicherten Schlüsselpasswörter erneut. Keine signierte 0.6.1 zum Download veröffentlicht; aktuell bleibt 0.6.0 der neueste Release.
+
+Release-Vorprüfung: erneut 97 Tests ohne Fehler, Release-Build und Release-Lint erfolgreich. Paket-/Versionsmetadaten der unsignierten APK geprüft. Prüfsummen und Download werden erst mit der signierten APK ergänzt.
 
 20.10.2026: Materialimport erkennt zusätzlich die Firmenliste mit `Title`, `Code`, `Typ`, `Bemerkung`, `BST Menge`. `Code` wird als Scancode und Materialnummer übernommen, `Title` als Beschreibung. Artikelart Material, Einheit Stk. Typ/Bemerkung und Bestellmenge werden nicht übernommen und erzeugen keine Bewegungen. Optionale Lager-Spalte wird unterstützt; fehlende Lager-Spalte erhält bei Mailupdates die bestehende Zuordnung. Gilt für Dateiauswahl und Gmail-Import. Alte Vorlagen bleiben kompatibel. Es werden weiterhin echte XLSX-Dateien benötigt; alte XLS-Dateien zuvor in Excel als XLSX speichern.
 

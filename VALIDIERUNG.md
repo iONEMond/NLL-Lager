@@ -1,3 +1,7 @@
+# Release-Vorbereitung 0.6.1 – 20.10.2026
+
+Versionsname 0.6.1, versionCode 10, Paket de.nll.lager. Erneut 97 Tests ohne Fehler oder übersprungene Tests, assembleRelease und lintRelease erfolgreich. Metadaten der erstellten app-release-unsigned.apk mit aapt geprüft. APK ist unsigniert und nicht als installierbares Update veröffentlicht. Bestehender Schlüssel vorhanden; Android Studio benötigt die nicht gespeicherten Schlüsselpasswörter erneut. Signaturprüfung und Veröffentlichung folgen erst nach Signierung. Honeywell-Tests der neuen Funktionen weiterhin offen. downloads/SHA256SUMS bleibt bis zum signierten Release unverändert.
+
 # Geräterückmeldung zu 0.5.0 – 20.10.2026
 
 Betreiber meldet: „Hab die 0.5 getestet funktioniert wunderbar“. Erfolgreicher Gerätetest von Version 0.5.0 laut Betreiber; keine einzelnen Testfälle oder Logs angegeben. Diese Bestätigung gilt für 0.5.0 und bestätigt nicht die später ergänzten Funktionen in 0.6.0 oder 0.6.1-dev. Historische Abschnitte mit damals ausstehenden Hardwaretests bleiben als damaliger Prüfstand bestehen.

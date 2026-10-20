@@ -1,6 +1,6 @@
 # App-Updates über GitHub
 
-Ab Entwicklungsstand 0.6.1-dev (versionCode 9), noch nicht im veröffentlichten Release 0.6.0. Die erste Version mit Updater muss einmal manuell auf dem Gerät installiert werden. Danach können neuere Versionen über den Button installiert werden.
+Für Release 0.6.1 (versionCode 10) vorbereitet, noch nicht signiert oder veröffentlicht und nicht im veröffentlichten Release 0.6.0 enthalten. Die erste Version mit Updater muss einmal manuell auf dem Gerät installiert werden. Danach können neuere Versionen über den Button installiert werden.
 
 ## Bedienung
 

@@ -6,7 +6,7 @@ Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen sca
 
 **Release 0.6.0 – erster Gerätetest.** [Gmail-Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Excel-Mailversand und Material-Mailimport mit Firmensignatur im Emulator geprüft. Honeywell-Hardwaretest und echte Prüfung der neuen Export-/Neuanlageabläufe stehen noch aus.
 
-**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`, neues Ausgabeformat, Bewegungsart-Auswahl vollständige Gerätesicherung und In-App-Updates von GitHub. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
+**Release 0.6.1 vorbereitet, noch nicht veröffentlicht (versionCode 10)** – Import der Firmen-Materialliste mit `Title` und `Code`, neues Ausgabeformat, Bewegungsart-Auswahl, vollständige Gerätesicherung und In-App-Updates von GitHub. Signierung mit dem bestehenden Schlüssel steht aus; Android Studio benötigt die Schlüsselpasswörter erneut. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
 
 ## Download
 
