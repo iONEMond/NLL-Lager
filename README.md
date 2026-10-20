@@ -9,8 +9,8 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | **0.5.0** | Vom Betreiber auf dem Gerät erfolgreich getestet |
 | **0.6.0 · Build 8** | Vorheriger Release; ergänzt Gmail |
 | **0.6.1 · Build 10** | Vorheriger Release |
-| **0.7.0 · Build 13** | **Neuester veröffentlichter Release** |
-| 0.7.1-dev · Build 14 | Unveröffentlicht: Abbruch, Mail-Zeitlimit und Excel über Mail-App teilen |
+| **0.7.0 · Build 13** | Wird wegen Mailproblemen zurückgezogen; nicht installieren |
+| 0.7.1 · Build 15 | Signiert und geprüft; Veröffentlichung vorbereitet |
 
 [Release 0.7.0](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.0) ergänzt vollständige Stammdatenbearbeitung, nachvollziehbare Stornos, Doppelscan-Warnung, detaillierte Importvorschau, optionale Importspalten, vierstellige PIN, Fortschrittsanzeigen und Sicherungsstatus. 124 lokale Tests, Release-Build und Lint erfolgreich; öffentlicher Download und Signatur geprüft. Hardwaretest der neuen Abläufe steht aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 

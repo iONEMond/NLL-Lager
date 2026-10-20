@@ -98,3 +98,7 @@ Neue Abläufe: 64 Tests, Debug-Build und Lint erfolgreich. Vier zusätzliche Mai
 ## Releaseprüfung 0.7.0 (Code 13), 20.10.2026
 
 124 lokale Tests ohne Fehler; Release-Build und Release-Lint erneut erfolgreich. Signierte APK: de.nll.lager, Version 0.7.0, Code 13, Mindest-API 26. apksigner erfolgreich mit bestehendem Release-Zertifikat. Größe 2.438.752 Bytes, SHA-256 1f85c71d34653bff723e1bcf26b1b9b7dccaf17063f1c5d1f9d71c0d972f35eb. Passwörter durch Betreiber direkt eingegeben, nicht gespeichert. Als stabiler Release v0.7.0 veröffentlicht. Anonyme Latest-API bestätigt v0.7.0, draft=false und prerelease=false. Öffentliche APK erneut heruntergeladen: identische Größe und SHA-256, apksigner erfolgreich. SHA256SUMS-Asset 563 Bytes, SHA-256 01361479e42c6fc2a1c9507d3834742b54c26ff5eb187cc9d0920ff2c98f96e0. Kein neuer Hardware- oder Mailtest.
+
+## Releaseprüfung 0.7.1 (Code 15)
+
+140 Tests ohne Fehler/übersprungene Tests, Release-Build und Release-Lint erneut erfolgreich. Paket de.nll.lager, Version 0.7.1, Code 15, Mindest-API 26, bestehender Release-Signer durch apksigner geprüft. APK 2.444.688 Bytes, SHA-256 44b52378981eb0acd013e16dc91f111014aa797bc4c7d903b26565a4d3cd7aca. Veröffentlichung noch ausstehend. Kein Honeywell- oder echter Mailtest dieses Stands.
