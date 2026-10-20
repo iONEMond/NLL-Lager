@@ -29,6 +29,14 @@ public class AdminSettingsTest {
         assertThrows(IllegalArgumentException.class,() -> settings.setPassword("short".toCharArray()));
         assertFalse(settings.hasPassword());
     }
+    @Test public void fourDigitPinRetainsLeadingZeroAndCanReplaceExistingPassword() {
+        settings.setPassword("Long-password".toCharArray());
+        settings.setPassword("0042".toCharArray());
+        assertTrue(new AdminSettings(RuntimeEnvironment.getApplication()).verify("0042".toCharArray()));
+        assertFalse(settings.verify("42".toCharArray()));assertFalse(settings.verify("Long-password".toCharArray()));
+        for(String invalid:Arrays.asList("123","12345","abcd","12a4","")) assertThrows(IllegalArgumentException.class,() -> settings.setPassword(invalid.toCharArray()));
+        assertTrue(settings.verify("0042".toCharArray()));
+    }
     @Test public void locationOrderPersistsAndInvalidEditsDoNotReplaceList() {
         settings.saveLocations(Arrays.asList("Leipzig","Fahrzeug 4"));
         assertEquals(Arrays.asList("Leipzig","Fahrzeug 4"),new AdminSettings(RuntimeEnvironment.getApplication()).locations());

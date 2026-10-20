@@ -87,6 +87,12 @@ public final class Store extends SQLiteOpenHelper {
         if(getWritableDatabase().update(people ? "people" : "materials",values,"code=?",new String[]{code})!=1) throw new IllegalArgumentException("Eintrag nicht gefunden.");
         Backup.request(app);
     }
+    public void deleteEntry(String code,boolean people) {
+        if(getWritableDatabase().delete(people ? "people" : "materials","code=?",new String[]{Rules.required(code,"Code")})!=1)
+            throw new IllegalArgumentException("Eintrag nicht mehr vorhanden.");
+        // Bookings own their historical snapshots; never cascade into movements or archives.
+        Backup.request(app);
+    }
     public List<Person> people() {
         List<Person> result=new ArrayList<>();
         try(Cursor c=getReadableDatabase().rawQuery("SELECT code,name,location FROM people ORDER BY name",null)) {while(c.moveToNext()) result.add(new Person(c.getString(0),c.getString(1),c.getString(2)));}
@@ -97,9 +103,10 @@ public final class Store extends SQLiteOpenHelper {
         try(Cursor c=getReadableDatabase().rawQuery("SELECT code,number,description,type,unit,location FROM materials ORDER BY description",null)) {while(c.moveToNext()) result.add(new Material(c));}
         return result;
     }
-    public int writeXlsx(java.io.OutputStream stream,long cutoff,boolean archived) throws IOException {
+    public int writeXlsx(java.io.OutputStream stream,long cutoff,boolean archived) throws IOException {return writeXlsx(stream,cutoff,archived,WorkProgress.NONE);}
+    int writeXlsx(java.io.OutputStream stream,long cutoff,boolean archived,WorkProgress progress) throws IOException {
         try(Cursor c=getReadableDatabase().rawQuery("SELECT id,timestamp,code,number,description,type,unit,from_location,to_location,quantity,person_code,person_name,archived_batch,movement_kind FROM movements WHERE id<=? AND archived_batch IS "+(archived ? "NOT NULL" : "NULL")+" ORDER BY id",new String[]{Long.toString(cutoff)})) {
-            return ExcelExport.write(stream,c);
+            return ExcelExport.write(stream,c,progress);
         }
     }
     public long book(Material material, String from, String to, String quantity, Person person) {return book(material,from,to,quantity,person,"");}
@@ -115,21 +122,45 @@ public final class Store extends SQLiteOpenHelper {
         v.put("person_code", person.code); v.put("person_name", person.name);
         long id=getWritableDatabase().insertOrThrow("movements", null, v);Backup.request(app);return id;
     }
-    public void importRows(List<String[]> rows, boolean people) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
+    enum ImportPolicy { REJECT, SKIP, UPDATE }
+    static final class ImportConflict extends IllegalArgumentException {
+        final int count;
+        ImportConflict(int count) {super(count+" Codes sind bereits vorhanden.");this.count=count;}
+    }
+    int importConflicts(List<String[]> rows,boolean people) {
+        int count=0;
+        for(String[] row:rows) if(people ? person(row[0])!=null : material(row[0])!=null) count++;
+        return count;
+    }
+    public void importRows(List<String[]> rows,boolean people) {importRows(rows,people,ImportPolicy.REJECT,WorkProgress.NONE);}
+    void importRows(List<String[]> rows,boolean people,WorkProgress progress) {importRows(rows,people,ImportPolicy.REJECT,progress);}
+    int[] importRows(List<String[]> rows,boolean people,ImportPolicy policy,WorkProgress progress) {
+        SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
         try {
-            for (String[] row : rows) {
-                if (people) {
-                    if (person(row[0]) != null) throw new IllegalArgumentException("Personencode existiert bereits: " + row[0]);
-                    addPerson(row[0], row[1],row.length>2 ? row[2] : "");
-                } else {
-                    if (material(row[0]) != null) throw new IllegalArgumentException("Scancode existiert bereits: " + row[0]);
-                    addMaterial(row[0], row[1], row[2], row[3], row[4],row.length>5 ? row[5] : "");
+            java.util.Set<String> codes=new java.util.HashSet<>();
+            for(String[] row:rows) if(!codes.add(Rules.required(row[0],"Code"))) throw new IllegalArgumentException("Doppelter Code innerhalb der Datei: "+row[0]);
+            int conflicts=importConflicts(rows,people);
+            if(policy==ImportPolicy.REJECT && conflicts>0) throw new ImportConflict(conflicts);
+            int[] result;
+            if(policy==ImportPolicy.UPDATE) {
+                int[] counts=new MailStore(this).upsert(rows,people,progress);
+                result=new int[]{counts[0],counts[1],0};
+            } else {
+                int processed=0,added=0,skipped=0;progress.update(0,rows.size(),"Einträge übernehmen …");
+                for(String[] row:rows) {
+                    boolean exists=people ? person(row[0])!=null : material(row[0])!=null;
+                    if(exists) skipped++;
+                    else {
+                        if(people) addPerson(row[0],row[1],row.length>2 ? row[2] : "");
+                        else addMaterial(row[0],row[1],row[2],row[3],row[4],row.length>5 ? row[5] : "");
+                        added++;
+                    }
+                    progress.update(++processed,rows.size(),"Einträge übernehmen …");
                 }
+                result=new int[]{added,0,skipped};
             }
-            db.setTransactionSuccessful();
-        } finally { db.endTransaction(); }
+            db.setTransactionSuccessful();Backup.request(app);return result;
+        } finally {db.endTransaction();}
     }
     public long cutoff() {
         try (Cursor c = getReadableDatabase().rawQuery("SELECT COALESCE(MAX(id),0) FROM movements WHERE archived_batch IS NULL", null)) {
@@ -159,11 +190,13 @@ public final class Store extends SQLiteOpenHelper {
         return lines;
     }
     /** Writes only the snapshot selected before opening the system file picker. Does not archive. */
-    public int writeCsv(Writer writer, long cutoff, boolean archived) throws IOException {
+    public int writeCsv(Writer writer, long cutoff, boolean archived) throws IOException {return writeCsv(writer,cutoff,archived,WorkProgress.NONE);}
+    int writeCsv(Writer writer,long cutoff,boolean archived,WorkProgress progress) throws IOException {
         writer.write('\uFEFF');
         writer.write(String.join(";",ExcelExport.HEADERS)+"\r\n");
         int count = 0;
         try (Cursor c = getReadableDatabase().rawQuery("SELECT id,timestamp,code,number,description,type,unit,from_location,to_location,quantity,person_code,person_name,archived_batch,movement_kind FROM movements WHERE id<=? AND archived_batch IS " + (archived ? "NOT NULL" : "NULL") + " ORDER BY id", new String[]{Long.toString(cutoff)})) {
+            int total=c.getCount();progress.update(0,total,"CSV-Bericht schreiben …");
             while (c.moveToNext()) {
                 String[] values=ExcelExport.values(c);
                 values[2]=values[2].replace('.', ',');
@@ -171,7 +204,7 @@ public final class Store extends SQLiteOpenHelper {
                     if(i>0) writer.write(';');
                     writer.write(Rules.csv(values[i]));
                 }
-                writer.write("\r\n"); count++;
+                writer.write("\r\n"); count++;progress.update(count,total,"CSV-Bericht schreiben …");
             }
         }
         return count;

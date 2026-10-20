@@ -57,6 +57,15 @@ public class StoreTest {
         assertThrows(IOException.class,() -> store.writeCsv(failing,store.cutoff(),false));
         assertEquals(1,store.count(false)); assertEquals(0,store.count(true));
     }
+    @Test public void manualDeletionRemovesOnlyCatalogRowsAndPreservesOpenAndArchivedSnapshots() throws Exception {
+        seed();book("1");store.archive(store.cutoff(),"first");book("2");
+        store.deleteEntry("00123",false);store.deleteEntry("0007",true);
+        assertNull(store.material("00123"));assertNull(store.person("0007"));
+        assertEquals(1,store.count(false));assertEquals(1,store.count(true));
+        StringWriter csv=new StringWriter();store.writeCsv(csv,store.cutoff(),false);
+        assertTrue(csv.toString().contains("Anna"));assertTrue(csv.toString().contains("Ventil"));
+        assertThrows(IllegalArgumentException.class,() -> store.deleteEntry("00123",false));
+    }
     @Test public void invalidMovementCannotEnterDatabase() {
         seed();
         assertThrows(IllegalArgumentException.class,() -> book("0"));
@@ -69,6 +78,30 @@ public class StoreTest {
         rows.add(new String[]{"new","New Person"}); rows.add(new String[]{"0007","Duplicate"});
         assertThrows(IllegalArgumentException.class,() -> store.importRows(rows,true));
         assertNull(store.person("new")); assertEquals("Anna",store.person("0007").name);
+    }
+    @Test public void importPoliciesSkipOrUpdateConflictsAndKeepHistory() throws Exception {
+        seed();book("1");
+        List<String[]> rows=Arrays.asList(new String[]{"00123","NEU","Neues Ventil","Material","Stk"},new String[]{"new","N","Neuer Artikel","Material","Stk"});
+        assertEquals(1,store.importConflicts(rows,false));
+        assertArrayEquals(new int[]{1,0,1},store.importRows(rows,false,Store.ImportPolicy.SKIP,WorkProgress.NONE));
+        assertEquals("MAT-17",store.material("00123").number);assertNotNull(store.material("new"));
+        assertArrayEquals(new int[]{0,2,0},store.importRows(rows,false,Store.ImportPolicy.UPDATE,WorkProgress.NONE));
+        assertEquals("NEU",store.material("00123").number);
+        StringWriter csv=new StringWriter();store.writeCsv(csv,store.cutoff(),false);
+        assertTrue(csv.toString().contains("Ventil; ½ Zoll"));assertFalse(csv.toString().contains("Neues Ventil"));
+        List<String[]> persons=Arrays.asList(new String[]{"0007","Neu Anna"},new String[]{"person-new","Ben"});
+        assertArrayEquals(new int[]{1,0,1},store.importRows(persons,true,Store.ImportPolicy.SKIP,WorkProgress.NONE));
+        assertEquals("Anna",store.person("0007").name);
+        assertArrayEquals(new int[]{0,2,0},store.importRows(persons,true,Store.ImportPolicy.UPDATE,WorkProgress.NONE));
+        assertEquals("Neu Anna",store.person("0007").name);
+    }
+    @Test public void failedUpdateBatchRollsBackUpdatedAndNewEntriesAndRejectsDuplicateFileCodes() {
+        seed();
+        List<String[]> rows=Arrays.asList(new String[]{"0007","Changed"},new String[]{"new","New"},new String[]{"bad",""});
+        assertThrows(IllegalArgumentException.class,() -> store.importRows(rows,true,Store.ImportPolicy.UPDATE,WorkProgress.NONE));
+        assertEquals("Anna",store.person("0007").name);assertNull(store.person("new"));
+        assertThrows(IllegalArgumentException.class,() -> store.importRows(Arrays.asList(new String[]{"x","A"},new String[]{"x","B"}),true,Store.ImportPolicy.SKIP,WorkProgress.NONE));
+        assertNull(store.person("x"));
     }
     @Test public void materialImportAndPersonImportPreserveCodes() {
         store.importRows(Collections.singletonList(new String[]{"0001","N-1","R32","Kältemittel","kg"}),false);
@@ -149,6 +182,24 @@ public class StoreTest {
         for(String xml:new String[]{head+row+row,head+"<row>"+inline("A2","Ventil")+"</row>","<row>"+inline("A1","Title")+inline("B1","Code")+inline("C1","Code")+"</row>"+row}) {
             File f=xlsx(xml,null);try {assertThrows(IOException.class,() -> ExcelImport.read(f,false));} finally {f.delete();}
         }
+    }
+    @Test public void minimalHeadersUseDefaultsAndPreserveAbsentFieldsOnUpdate() throws Exception {
+        File f=xlsx("<row>"+inline("A1","Code")+inline("B1","Beschreibung")+"</row><row>"+inline("A2","0001")+inline("B2","Neu")+"</row>",null);
+        try {
+            List<String[]> rows=ExcelImport.read(f,false);
+            assertArrayEquals(new String[]{"0001","0001","Neu","Material","Stk"},rows.get(0));
+            store.addMaterial("0001","KM-1","Alt","Kältemittel","kg","A");
+            store.importRows(rows,false,Store.ImportPolicy.UPDATE,WorkProgress.NONE);
+            Store.Material item=store.material("0001");
+            assertEquals("Neu",item.description);assertEquals("KM-1",item.number);
+            assertEquals("Kältemittel",item.type);assertEquals("kg",item.unit);assertEquals("A",item.location);
+        } finally {f.delete();}
+    }
+    @Test public void optionalBlankFieldsUseDefaultsButCodeAndDescriptionRemainRequired() throws Exception {
+        File f=xlsx("<row>"+inline("A1","Scancode")+inline("B1","Beschreibung")+inline("C1","Art")+inline("D1","Einheit")+"</row><row>"+inline("A2","0002")+inline("B2","Ventil")+"</row>",null);
+        try {assertArrayEquals(new String[]{"0002","0002","Ventil","Material","Stk"},ExcelImport.read(f,false).get(0));}finally{f.delete();}
+        File bad=xlsx("<row>"+inline("A1","Code")+"</row><row>"+inline("A2","0002")+"</row>",null);
+        try {assertThrows(IOException.class,() -> ExcelImport.read(bad,false));}finally{bad.delete();}
     }
     @Test public void rejectsFormulasAndMissingHeaders() throws Exception {
         File formula=xlsx("<row>"+inline("A1","Personencode")+inline("B1","Name")+"</row><row><c r='A2'><f>1+1</f><v>2</v></c>"+inline("B2","Anna")+"</row>",null);

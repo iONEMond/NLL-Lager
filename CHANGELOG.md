@@ -2,6 +2,19 @@
 
 Neueste veröffentlichte APK: **0.6.1**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
+## 0.6.2 – in Entwicklung, nicht veröffentlicht
+
+20.10.2026: Entwicklungsstand 0.6.2-dev, versionCode 11. Veröffentlichung bleibt 0.6.1; für diese Änderungen gibt es noch keine signierte Release-APK.
+
+1. Materialimport verlangt nur Code/Scancode und Beschreibung/Title. Materialnummer, Art, Einheit und Lager optional. Neue Einträge: Nummer = Code, Art = Material, Einheit = Stk, Lager leer. Bei Aktualisierung bleiben nicht mitgelieferte Zusatzspalten erhalten. Personen benötigen Code und Name (Beschreibung/Title als Alias); Lager ist optional. Firmenlayout und bisherige Vorlagen bleiben kompatibel.
+2. Vierstellige numerische PIN einschließlich führender Nullen erlaubt; bisherige Passwörter ab acht Zeichen funktionieren weiter. Hashverfahren und bestehende Zugangsdaten unverändert, keine automatische Umstellung.
+3. Fortschrittsbalken für Dateiimport, Übernahme, XLSX-/CSV-Export, Mailbericht und manuelle Synchronisierung. Bekannte Datensatzanzahlen werden angezeigt, unbekannte Datei-/Netzwerkphasen als laufende Aktivität mit Arbeitsschritt. Bei laufender Hintergrundverarbeitung zeigt das Sync-Menü einen Aktivitätsbalken.
+4. Bei eingerichteter und verbundener Mailanbindung sind die Einrichtungsaktionen standardmäßig ausgeblendet; über „Verbindung bearbeiten“ weiterhin erreichbar. Fehlende Google-Freigabe zeigt die nötige Einrichtung erneut.
+5. Personen und Material im jeweiligen Listeneintrag nach Bestätigung löschbar. Einstellungen werden beim Ausführen erneut geprüft; gleichzeitige Mailverarbeitung sperrt Löschen. Buchungssnapshots und Archive bleiben erhalten; gelöschte aktive Zuordnungen werden verworfen. Spätere Importe können gelöschte Einträge erneut anlegen.
+6. Dateiimport fragt bei vorhandenen Codes nach Aktualisieren, Überspringen oder Abbrechen. Neue Codes werden bei beiden Übernahmeoptionen ergänzt; Ergebnis nennt ergänzte/aktualisierte/übersprungene Einträge. Transaktion schützt vor Teilübernahme. Ein zwischen Vorschau und Übernahme neu entstandener Konflikt führt erneut zur Auswahl. Mehrfachcodes innerhalb derselben Datei bleiben ungültig. Mailimport behält die vereinbarte automatische Aktualisierung.
+
+Prüfung: 108 lokale Tests ohne Fehler/übersprungene Tests, Debug- und Release-Build sowie Debug-/Release-Lint erfolgreich. Keine neue Geräte- oder echte Mailprüfung. Datenbank bleibt Version 6. Signierung und Veröffentlichung dieses Entwicklungsstands stehen aus.
+
 ## Repository-Pflege – 20.10.2026
 
 README auf Projektstatus, Installation und Navigation reduziert; Bedienung, Entwicklung und bestehende Anleitungen unter `docs/` gebündelt. `Übergabe.md` dokumentiert Architektur, Betriebsentscheidungen, Release-/Signierablauf, Daten- und Mailbesonderheiten sowie offene Tests für Nachfolge-Agenten. Projektregeln verweisen auf die Übergabe. Historische APKs mit ihrem Zweck dokumentiert und als Testdateien/Altlinks erhalten. Neue Build-Artefakte und lokale Altunterlagen ausgeschlossen. Relative Markdown-Dateilinks werden mit `tools/check_docs.py` geprüft. Keine fachliche Verhaltensänderung; Release 0.6.1 bleibt unsigniert und unveröffentlicht.

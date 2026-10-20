@@ -26,6 +26,7 @@ public class WorkflowTest {
         RuntimeEnvironment.getApplication().deleteDatabase("nll-lager.db");
         RuntimeEnvironment.getApplication().getSharedPreferences("admin-settings",0).edit().clear().commit();
         new AdminSettings(RuntimeEnvironment.getApplication()).saveLocations(java.util.Arrays.asList("A","Lager A","Lager","B","Fahrzeug","Fahrzeug 4"));
+        MailConfig.prefs(RuntimeEnvironment.getApplication()).edit().clear().commit();
         db=new Store(RuntimeEnvironment.getApplication());
         db.addPerson("0007","Anna","0007-L");
         db.addMaterial("00123","M-1","Ventil","Material","Stk");
@@ -68,6 +69,48 @@ public class WorkflowTest {
         password.setText("wrong");auth.getButton(AlertDialog.BUTTON_POSITIVE).performClick();assertFalse(isUnlocked());assertNull(db.material(code));
         password.setText("Test-password-42");auth.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
         return ShadowAlertDialog.getLatestAlertDialog();
+    }
+    @Test public void conflictingFileImportOffersExplicitChoicesAndCancelDoesNotChangeData() throws Exception {
+        unlockForTest();
+        java.util.List<String[]> rows=java.util.Collections.singletonList(new String[]{"00123","M-NEW","New","Material","Stk"});
+        invoke("confirmImport",new Class<?>[]{java.util.List.class,boolean.class,int.class},rows,false,1);
+        AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+        assertEquals("Vorhandene aktualisieren",dialog.getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());
+        assertEquals("Vorhandene überspringen",dialog.getButton(AlertDialog.BUTTON_NEUTRAL).getText().toString());
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+        assertEquals("M-1",db.material("00123").number);
+        java.lang.reflect.Field unlocked=MainActivity.class.getDeclaredField("adminUnlocked");unlocked.setAccessible(true);unlocked.setBoolean(activity,false);
+        invoke("saveImport",new Class<?>[]{java.util.List.class,boolean.class,Store.ImportPolicy.class},rows,false,Store.ImportPolicy.UPDATE);
+        assertEquals("M-1",db.material("00123").number);
+    }
+    @Test public void catalogDeleteRequiresConfirmationAndRechecksUnlock() throws Exception {
+        unlockForTest();invoke("editAssignment",new Class<?>[]{String.class,boolean.class},"00123",false);
+        AlertDialog edit=ShadowAlertDialog.getLatestAlertDialog();
+        View delete=find(edit.getWindow().getDecorView(),"Material löschen",false);assertNotNull(delete);delete.performClick();
+        AlertDialog confirm=ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull(db.material("00123"));confirm.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+        assertNotNull(db.material("00123"));delete.performClick();
+        confirm=ShadowAlertDialog.getLatestAlertDialog();
+        java.lang.reflect.Field unlocked=MainActivity.class.getDeclaredField("adminUnlocked");unlocked.setAccessible(true);unlocked.setBoolean(activity,false);
+        confirm.getButton(AlertDialog.BUTTON_POSITIVE).performClick();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertNotNull(db.material("00123"));
+        unlockForTest();invoke("editAssignment",new Class<?>[]{String.class,boolean.class},"00123",false);
+        edit=ShadowAlertDialog.getLatestAlertDialog();find(edit.getWindow().getDecorView(),"Material löschen",false).performClick();
+        ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();assertNull(db.material("00123"));
+    }
+    @Test public void connectedSyncHidesSetupUntilExplicitlyExpanded() throws Exception {
+        MailConfig.save(activity,"scanner@gmail.com","office@example.com",false);
+        MailConfig.prefs(activity).edit().putBoolean("connected",true).commit();
+        unlockForTest();invoke("mailMenu",new Class<?>[]{});
+        assertNull(find(activity.getWindow().getDecorView(),"Postfach & Empfänger einrichten",false));
+        assertNull(find(activity.getWindow().getDecorView(),"Mit Google verbinden",false));
+        assertNotNull(find(activity.getWindow().getDecorView(),"Jetzt synchronisieren",false));
+        press("Verbindung bearbeiten");
+        assertNotNull(find(activity.getWindow().getDecorView(),"Postfach & Empfänger einrichten",false));
+        press("Einrichtung ausblenden");
+        assertNull(find(activity.getWindow().getDecorView(),"Mit Google verbinden",false));
+        MailConfig.prefs(activity).edit().putBoolean("connected",false).commit();
+        invoke("mailMenu",new Class<?>[]{});
+        assertNotNull(find(activity.getWindow().getDecorView(),"Mit Google verbinden",false));
     }
     @Test public void unknownMaterialCanBeCreatedAfterPasswordAndReturnsToLockedBooking() throws Exception {
         AlertDialog d=authorizeUnknown("Material","NEW001");

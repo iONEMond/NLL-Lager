@@ -17,7 +17,9 @@ public final class ExcelExport {
     }
     private static final String NS="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
     private static final String REL="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-    public static int write(OutputStream output,Cursor cursor) throws IOException {
+    public static int write(OutputStream output,Cursor cursor) throws IOException {return write(output,cursor,WorkProgress.NONE);}
+    static int write(OutputStream output,Cursor cursor,WorkProgress progress) throws IOException {
+        int total=cursor.getCount();progress.update(0,total,"Excel-Bericht schreiben …");
         try(ZipOutputStream zip=new ZipOutputStream(new FilterOutputStream(output) { @Override public void close() throws IOException {flush();} })) {
             entry(zip,"[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/></Types>");
             entry(zip,"_rels/.rels","<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\""+REL+"/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>");
@@ -43,9 +45,9 @@ public final class ExcelExport {
                     } else if(col==2) number(w,ref,values[col],2);
                     else text(w,ref,values[col],0);
                 }
-                w.write("</row>");
+                w.write("</row>");progress.update(count,total,"Excel-Bericht schreiben …");
             }
-            w.write("</sheetData><autoFilter ref=\"A1:H"+(count+1)+"\"/></worksheet>"); w.flush(); zip.closeEntry();
+            w.write("</sheetData><autoFilter ref=\"A1:H"+(count+1)+"\"/></worksheet>"); w.flush(); zip.closeEntry();progress.update(0,0,"Excel-Datei abschließen …");
             return count;
         }
     }

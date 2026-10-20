@@ -11,7 +11,9 @@ import java.util.zip.ZipFile;
 public final class ExcelImport {
     private static final int MAX_XML = 16 * 1024 * 1024;
     private ExcelImport() {}
-    public static List<String[]> read(File file, boolean people) throws Exception {
+    public static List<String[]> read(File file, boolean people) throws Exception {return read(file,people,WorkProgress.NONE);}
+    static List<String[]> read(File file,boolean people,WorkProgress progress) throws Exception {
+        progress.update(0,0,"Excel-Datei lesen und prüfen …");
         try(ZipFile zip=new ZipFile(file)) {
             List<String> strings=sharedStrings(zip);
             String relationship=null;
@@ -63,7 +65,7 @@ public final class ExcelImport {
                         row[column]=v;
                     } else if("row".equals(tag) && row!=null) {
                         boolean empty=true; for(String s:row) if(!s.trim().isEmpty()) {empty=false; break;}
-                        if(!empty) rows.add(row);
+                        if(!empty) {rows.add(row);if(rows.size()%100==0) progress.update(0,0,rows.size()+" Excel-Zeilen gelesen …");}
                         if(rows.size()>10001) throw new IOException("Maximal 10.000 Datensätze pro Import.");
                         row=null;
                     }
@@ -110,41 +112,15 @@ public final class ExcelImport {
     private static String normalized(String s) {
         return s.toLowerCase(Locale.ROOT).replace(" ","").replace("_","").replace("-","").replace(".","");
     }
-    private static List<String[]> mapCompanyMaterials(List<String[]> rows) throws IOException {
-        String[] header=rows.get(0);int title=-1,code=-1,location=-1;
-        for(int i=0;i<header.length;i++) {
-            String h=normalized(header[i]);
-            if(h.equals("title")) {if(title>=0) throw new IOException("Doppelte Spaltenüberschrift: Title");title=i;}
-            if(h.equals("code")) {if(code>=0) throw new IOException("Doppelte Spaltenüberschrift: Code");code=i;}
-            if(h.equals("lager") || h.equals("lagerort")) {if(location>=0) throw new IOException("Doppelte Lager-Spalte.");location=i;}
-        }
-        List<String[]> result=new ArrayList<>();Set<String> codes=new HashSet<>();
-        for(int i=1;i<rows.size();i++) {
-            String[] row=rows.get(i);
-            try {
-                String c=Rules.required(row[code],"Code"),description=Rules.required(row[title],"Title");
-                if(!codes.add(c)) throw new IllegalArgumentException("Doppelter Code in Datei: "+c);
-                String[] mapped=location<0 ? new String[]{c,c,description,"Material","Stk"} : new String[]{c,c,description,"Material","Stk",row[location].trim()};
-                if(location>=0 && !mapped[5].isEmpty()) mapped[5]=Rules.required(mapped[5],"Lager");
-                result.add(mapped);
-            } catch(IllegalArgumentException ex) {throw new IOException("Datensatz "+i+": "+ex.getMessage());}
-        }
-        if(result.isEmpty()) throw new IOException("Keine Datensätze vorhanden.");
-        return result;
+    private static final class MappedRows extends ArrayList<String[]> {
+        final boolean[] supplied;
+        MappedRows(int[] columns) {supplied=new boolean[columns.length];for(int i=0;i<columns.length;i++) supplied[i]=columns[i]>=0;}
+    }
+    static boolean supplied(List<String[]> rows,int column) {
+        return !(rows instanceof MappedRows) || ((MappedRows)rows).supplied[column];
     }
     private static List<String[]> map(List<String[]> rows,boolean people) throws IOException {
         if(rows.isEmpty()) throw new IOException("Die Tabelle ist leer.");
-        // Company catalogue: Title + Code, with unrelated category/ordering columns.
-        // Keep the established template strict; detect the company layout explicitly.
-        if(!people) {
-            boolean title=false,code=false,standard=false;
-            for(String cell:rows.get(0)) {
-                String h=normalized(cell);
-                title|=h.equals("title");code|=h.equals("code");
-                standard|=h.equals("scancode") || h.equals("barcode") || h.equals("beschreibung") || h.equals("matnummer") || h.equals("materialnummer") || h.equals("matnr");
-            }
-            if(title && code && !standard) return mapCompanyMaterials(rows);
-        }
         String[] names=people ? new String[]{"personencode","name"} : new String[]{"scancode","matnummer","beschreibung","art","einheit"};
         int[] columns=new int[names.length]; Arrays.fill(columns,-1);
         String[] header=rows.get(0);
@@ -152,10 +128,12 @@ public final class ExcelImport {
             String h=normalized(header[i]);
             if(h.equals("materialnummer") || h.equals("matnr")) h="matnummer";
             if(!people && (h.equals("barcode") || h.equals("code"))) h="scancode";
+            if(!people && h.equals("title")) h="beschreibung";
+            if(people && (h.equals("beschreibung") || h.equals("title"))) h="name";
             if(people && h.equals("code")) h="personencode";
             for(int j=0;j<names.length;j++) if(names[j].equals(h)) {if(columns[j]!=-1) throw new IOException("Doppelte Spaltenüberschrift: "+names[j]); columns[j]=i;}
         }
-        for(int i=0;i<names.length;i++) if(columns[i]<0) throw new IOException("Spalte fehlt: "+names[i]+". Bitte Vorlage verwenden.");
+        for(int i=0;i<names.length;i++) if((i==0 || i==(people ? 1 : 2)) && columns[i]<0) throw new IOException("Spalte fehlt: "+names[i]+". Bitte Vorlage verwenden.");
         int locationColumn=-1;
         for(int i=0;i<header.length;i++) {
             String h=normalized(header[i]);
@@ -163,11 +141,15 @@ public final class ExcelImport {
                 if(locationColumn>=0) throw new IOException("Doppelte Lager-Spalte."); locationColumn=i;
             }
         }
-        List<String[]> result=new ArrayList<>(); Set<String> codes=new HashSet<>();
+        List<String[]> result=new MappedRows(columns); Set<String> codes=new HashSet<>();
         for(int i=1;i<rows.size();i++) {
             String[] mapped=new String[names.length+(locationColumn>=0 ? 1 : 0)];
             try {
-                for(int j=0;j<names.length;j++) mapped[j]=Rules.required(rows.get(i)[columns[j]],names[j]);
+                for(int j=0;j<names.length;j++) {
+                    String value=columns[j]<0 ? "" : rows.get(i)[columns[j]].trim();
+                    if(!people && value.isEmpty() && j!=0 && j!=2) value=j==1 ? mapped[0] : j==3 ? "Material" : "Stk";
+                    mapped[j]=Rules.required(value,names[j]);
+                }
                 String location=locationColumn<0 ? "" : rows.get(i)[locationColumn].trim();
                 if(locationColumn>=0) mapped[names.length]=location.isEmpty() ? "" : Rules.required(location,people ? "Lagernummer" : "Lager");
                 if(!people) {

@@ -1,3 +1,9 @@
+# Bedienungs- und Importänderungen 0.6.2-dev – 20.10.2026
+
+Version 0.6.2-dev, versionCode 11, Datenbank weiterhin Version 6. Alle sechs beauftragten Punkte der Reihe nach implementiert und gezielt geprüft. Abschließend 108 lokale Tests, keine Fehler oder übersprungenen Tests; assembleDebug, lintDebug, assembleRelease und lintRelease erfolgreich. Elf zusätzliche Tests decken optionale Materialfelder/Spaltenpräsenz, Erhalt bei Updates, vierstellige PIN mit führenden Nullen, Fortschrittsbalken/Datensatzanzahlen, geklappte Sync-Einrichtung, Löschbestätigung samt erneuter Freigabeprüfung, Erhalt offener/archivierter Buchungen, Importkonflikt-Auswahl, Aktualisieren/Überspringen und Transaktionsrollback ab. Bestehende Mail-, Backup-, Signatur- und Exportfehler-Tests weiterhin erfolgreich. Relative Dokumentationslinks geprüft.
+
+Keine neue Geräteinstallation, visuelle Honeywell-Prüfung oder echte Mailversendung ausgeführt. Fortschritt und Mailtransport in lokalen Tests geprüft; Original-Firmen-XLSX weiterhin nicht vorhanden. Debug-Vorschau unter separatem Paket de.nll.lager.preview lokal gebaut. Release-Ausgabe unsigniert; noch kein 0.6.2-Release oder neues OTA-Asset veröffentlicht. Stabile APK bleibt 0.6.1.
+
 # Veröffentlichung 0.6.1 – 20.10.2026
 
 Stabiler GitHub-Release v0.6.1 über Safari veröffentlicht (kein Entwurf/Pre-Release), genau eine APK sowie SHA256SUMS. Anonyme HTTPS-Abfrage von releases/latest liefert v0.6.1. APK erneut ohne Zugangsdaten heruntergeladen: 2.423.836 Bytes, SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31; identisch mit lokal signierter APK und GitHub-Digest. SHA256SUMS-Digest ebenfalls abgeglichen. Heruntergeladene APK mit apksigner erneut erfolgreich gegen vorhandenes Release-Zertifikat geprüft. Keine neue Geräteinstallation oder Mailprüfung durchgeführt. [Release](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1). Frühere Abschnitte sind historische Prüfstände.

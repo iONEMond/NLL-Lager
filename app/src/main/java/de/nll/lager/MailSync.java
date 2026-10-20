@@ -14,7 +14,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class MailSync {
     static final AtomicBoolean BUSY=new AtomicBoolean();
-    static boolean run(Context context) {
+    static boolean run(Context context) {return run(context,WorkProgress.NONE);}
+    static boolean run(Context context,WorkProgress progress) {
+        progress.update(0,0,"Google-Verbindung herstellen …");
         if(!BUSY.compareAndSet(false,true)) return false;
         MailConfig config=new MailConfig(context);
         try(Store store=new Store(context)) {
@@ -24,17 +26,19 @@ final class MailSync {
             if(auth.hasResolution() || auth.getAccessToken()==null || !auth.getGrantedScopes().containsAll(Arrays.asList(MailConfig.READ,MailConfig.SEND))) throw new IOException("Gmail-Freigabe erforderlich. Im geschützten Mail-Menü erneut verbinden.");
             GmailClient client=new GmailClient(auth.getAccessToken());
             if(!config.gmail.equalsIgnoreCase(client.call("profile",null).getString("emailAddress"))) throw new IOException("Falsches Google-Konto ausgewählt.");
-            sync(context,config,store,client);
+            sync(context,config,store,client,progress);
             MailConfig.status(context,"Synchronisierung abgeschlossen. Auftragsstatus unten prüfen.");return true;
         } catch(Exception e) {
             MailConfig.status(context,e instanceof IOException ? e.getMessage() : "Gmail-Verbindung fehlgeschlagen. Internet, Google-Einrichtung und Kontofreigabe prüfen.");return false;
         } finally {BUSY.set(false);Backup.request(context);}
     }
-    static void sync(Context context,MailConfig config,Store store,GmailClient client) throws Exception {
-        MailStore mail=new MailStore(store);mail.finishAutomaticArchives();sendPending(context,config,mail,client);
+    static void sync(Context context,MailConfig config,Store store,GmailClient client) throws Exception {sync(context,config,store,client,WorkProgress.NONE);}
+    static void sync(Context context,MailConfig config,Store store,GmailClient client,WorkProgress progress) throws Exception {
+        MailStore mail=new MailStore(store);mail.finishAutomaticArchives();sendPending(context,config,mail,client,progress);
         List<JSONObject> messages=new ArrayList<>();String page="";
         // Bounded pagination. Process oldest first so successive catalog updates keep their order.
         for(int batch=0;batch<10;batch++) {
+            progress.update(0,0,"Posteingang prüfen · Seite "+(batch+1)+" …");
             JSONObject response=client.call("messages?maxResults=100&q="+GmailClient.query("in:inbox after:"+(config.since/1000)+" from:"+config.recipient+" subject:NLL")+(page.isEmpty() ? "" : "&pageToken="+GmailClient.query(page)),null);
             JSONArray list=response.optJSONArray("messages");
             if(list!=null) for(int i=0;i<list.length();i++) {
@@ -45,15 +49,19 @@ final class MailSync {
             if(batch==9) throw new IOException("Zu viele passende Mails. Ältere Aufträge im Gmail-Postfach aus dem Posteingang verschieben.");
         }
         messages.sort(Comparator.comparingLong(m -> m.optLong("internalDate",0)));
+        int processed=0;
         for(JSONObject message:messages) {
+            progress.update(processed,messages.size(),"Mailaufträge verarbeiten …");
             if(Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            prepare(context,config,store,client,message);sendPending(context,config,mail,client);
+            prepare(context,config,store,client,message,false,progress);sendPending(context,config,mail,client,progress);
+            progress.update(++processed,messages.size(),"Mailaufträge verarbeiten …");
         }
     }
     static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message) throws Exception {
         prepare(context,config,store,client,message,false);
     }
-    static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message,boolean autoArchive) throws Exception {
+    static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message,boolean autoArchive) throws Exception {prepare(context,config,store,client,message,autoArchive,WorkProgress.NONE);}
+    static void prepare(Context context,MailConfig config,Store store,GmailClient client,JSONObject message,boolean autoArchive,WorkProgress progress) throws Exception {
         String id=message.getString("id"),key=config.gmail+":"+id;MailStore mail=new MailStore(store);
         if(mail.exists(key) || message.optLong("internalDate",0)<config.since) return;
         JSONObject payload=message.getJSONObject("payload");
@@ -63,12 +71,13 @@ final class MailSync {
         List<String[]> rows=null;long cutoff=0;byte[] attachment=null;String result;
         try {
             if(command.startsWith("IMPORT")) {
+                progress.update(0,0,"Importanhang laden und prüfen …");
                 List<JSONObject> parts=new ArrayList<>();MailProtocol.attachments(payload,parts);
                 if(parts.size()!=1 || !parts.get(0).optString("filename").toLowerCase(Locale.ROOT).endsWith(".xlsx")) throw new IOException("Genau einen .xlsx-Anhang senden. Signaturbilder werden ignoriert; andere zusätzliche Dateien sind nicht erlaubt.");
                 File temp=File.createTempFile("mail-import-",".xlsx",context.getCacheDir());
                 try {
                     try(OutputStream out=new FileOutputStream(temp)) {out.write(client.attachment(id,parts.get(0)));}
-                    try {rows=ExcelImport.read(temp,command.endsWith("PERSONEN"));}
+                    try {rows=ExcelImport.read(temp,command.endsWith("PERSONEN"),progress);}
                     catch(Exception e) {throw new IOException("Excel-Datei ungültig: "+e.getMessage());}
                 } finally {if(!temp.delete()) temp.deleteOnExit();}
             }
@@ -76,7 +85,7 @@ final class MailSync {
             try {
                 if(mail.exists(key)) return;
                 if(rows!=null) {
-                    int[] count=mail.upsert(rows,command.endsWith("PERSONEN"));
+                    int[] count=mail.upsert(rows,command.endsWith("PERSONEN"),progress);
                     result=command+": "+count[0]+" ergänzt, "+count[1]+" aktualisiert. Fehlende Einträge bleiben erhalten.";
                 } else {
                     cutoff=store.cutoff();
@@ -86,7 +95,7 @@ final class MailSync {
                             @Override public void write(int b) throws IOException {if(++size>12*1024*1024) throw new IOException("Export überschreitet das Mail-Limit (12 MB).");out.write(b);}
                             @Override public void write(byte[] b,int offset,int length) throws IOException {if((size+=length)>12*1024*1024) throw new IOException("Export überschreitet das Mail-Limit (12 MB).");out.write(b,offset,length);}
                         };
-                        int count=store.writeXlsx(bounded,cutoff,false);attachment=out.toByteArray();
+                        int count=store.writeXlsx(bounded,cutoff,false,progress);attachment=out.toByteArray();
                         result="EXPORT: "+count+" offene Bewegungen. Auftrag "+id+". "+(autoArchive ? "Automatische Archivierung nach bestätigtem Versand." : "Keine Archivierung beim Versand; nach Übernahme separat am Scanner bestätigen.");
                     }
                 }
@@ -116,19 +125,21 @@ final class MailSync {
         if(!name.matches("[0-9a-f-]{36}\\.eml")) throw new IOException("Ungültiger Mail-Ausgang.");
         return new File(new File(context.getFilesDir(),"mail-outbox"),name);
     }
-    private static void sendPending(Context context,MailConfig config,MailStore mail,GmailClient client) throws Exception {
+    private static void sendPending(Context context,MailConfig config,MailStore mail,GmailClient client,WorkProgress progress) throws Exception {
         List<String[]> replies=new ArrayList<>();
         try(Cursor c=mail.store.getReadableDatabase().rawQuery("SELECT id,reply FROM mail_commands WHERE state='pending' AND substr(id,1,?)=? ORDER BY created LIMIT 30",new String[]{Integer.toString(config.gmail.length()+1),config.gmail+":"})) {
             while(c.moveToNext()) replies.add(new String[]{c.getString(0),c.getString(1)});
         }
+        int sent=0;
         for(String[] r:replies) {
+            progress.update(sent,replies.size(),"Berichte und Antworten senden …");
             File file=replyFile(context,r[1]);
             String mime;try(InputStream in=new FileInputStream(file)) {mime=new String(GmailClient.read(in,20*1024*1024),java.nio.charset.StandardCharsets.UTF_8);}
             if(!mime.startsWith("To: "+config.recipient+"\r\n")) continue;
             mail.state(r[0],"sending");
             try {client.send(mime);mail.state(r[0],"sent");}
             catch(Exception e) {mail.state(r[0],"uncertain");throw new IOException("Versandstatus unklar. Im Mail-Menü prüfen; keine automatische Wiederholung und keine Archivierung.");}
-            mail.finishAutomaticArchives();
+            mail.finishAutomaticArchives();progress.update(++sent,replies.size(),"Berichte und Antworten senden …");
         }
     }
 }

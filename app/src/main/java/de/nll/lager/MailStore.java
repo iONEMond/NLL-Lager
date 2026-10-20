@@ -31,8 +31,10 @@ final class MailStore {
         store.getWritableDatabase().update("mail_commands",v,"id=?",new String[]{id});
     }
     /** Existing fields absent from older templates are preserved. No catalog deletion. */
-    int[] upsert(List<String[]> rows,boolean people) {
+    int[] upsert(List<String[]> rows,boolean people) {return upsert(rows,people,WorkProgress.NONE);}
+    int[] upsert(List<String[]> rows,boolean people,WorkProgress progress) {
         SQLiteDatabase db=store.getWritableDatabase();int added=0,updated=0;
+        int processed=0;progress.update(0,rows.size(),"Einträge übernehmen …");
         for(String[] row:rows) {
             String code=Rules.required(row[0],"Code");boolean exists=people ? store.person(code)!=null : store.material(code)!=null;
             if(!exists) {
@@ -43,14 +45,15 @@ final class MailStore {
                 ContentValues v=new ContentValues();
                 if(people) v.put("name",Rules.required(row[1],"Name"));
                 else {
-                    v.put("number",Rules.required(row[1],"Materialnummer"));v.put("description",Rules.required(row[2],"Beschreibung"));
+                    if(ExcelImport.supplied(rows,1)) v.put("number",Rules.required(row[1],"Materialnummer"));v.put("description",Rules.required(row[2],"Beschreibung"));
                     if(!Arrays.asList("Material","Kältemittel").contains(row[3])) throw new IllegalArgumentException("Ungültige Materialart.");
-                    v.put("type",row[3]);v.put("unit",Rules.required(row[4],"Einheit"));
+                    if(ExcelImport.supplied(rows,3)) v.put("type",row[3]);if(ExcelImport.supplied(rows,4)) v.put("unit",Rules.required(row[4],"Einheit"));
                 }
                 int index=people ? 2 : 5;
                 if(row.length>index) v.put("location",row[index].isEmpty() ? "" : Rules.required(row[index],"Lager"));
                 db.update(people ? "people" : "materials",v,"code=?",new String[]{code});updated++;
             }
+            progress.update(++processed,rows.size(),"Einträge übernehmen …");
         }
         return new int[]{added,updated};
     }

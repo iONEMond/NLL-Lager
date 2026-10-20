@@ -39,6 +39,12 @@ public class MainActivity extends Activity {
     private Spinner from, to, movementKind;
     private AdminSettings settings;
     private boolean adminUnlocked;
+    private boolean mailSetupExpanded;
+    private OperationProgress operationProgress;
+    private OperationProgress operation(String title,String message) {
+        if(operationProgress!=null) operationProgress.dismiss();
+        return operationProgress=new OperationProgress(this,title,message);
+    }
     private SharedPreferences prefs;
     private AppUpdate.Release updateRelease;
     private java.io.File updateFile;
@@ -214,7 +220,7 @@ public class MainActivity extends Activity {
         if(change && !requireAdmin()) return;
         boolean setup=!settings.hasPassword();
         LinearLayout layout=dialogBody();
-        EditText password=dialogField(layout,change || setup ? "Neues Passwort (mindestens 8 Zeichen)" : "Passwort","");
+        EditText password=dialogField(layout,change || setup ? "Neue PIN (4 Ziffern) oder Passwort (mindestens 8 Zeichen)" : "Passwort","");
         password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         EditText repeat=(change || setup) ? dialogField(layout,"Passwort wiederholen","") : null;
         if(repeat!=null) repeat.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
@@ -414,8 +420,15 @@ public class MainActivity extends Activity {
         text("Status: "+MailConfig.prefs(this).getString("status","Noch keine Synchronisierung"),16,MUTED);
         long last=MailConfig.prefs(this).getLong("last",0);
         if(last>0) text("Letzter Versuch: "+new SimpleDateFormat("dd.MM.yyyy HH:mm",Locale.GERMANY).format(new Date(last)),15,MUTED);
-        button("Postfach & Empfänger einrichten",true,this::configureMail);
-        if(!config.gmail.isEmpty()) button("Mit Google verbinden",false,this::authorizeMail);
+        if(config.ready()) button(mailSetupExpanded ? "Einrichtung ausblenden" : "Verbindung bearbeiten",false,() -> {mailSetupExpanded=!mailSetupExpanded;render();});
+        if(!config.ready() || mailSetupExpanded) {
+            button("Postfach & Empfänger einrichten",true,this::configureMail);
+            if(!config.gmail.isEmpty()) button("Mit Google verbinden",false,this::authorizeMail);
+        }
+        if(MailSync.BUSY.get() && !writing) {
+            ProgressBar background=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);background.setIndeterminate(true);background.setContentDescription("Synchronisierung läuft im Hintergrund");body.addView(background);
+            text("Hintergrundverarbeitung läuft …",16,MUTED);
+        }
         if(config.ready()) {
             button("Jetzt synchronisieren",true,this::syncMail);
             button("Export jetzt per Mail senden",false,() -> localMailExport(config));
@@ -424,7 +437,7 @@ public class MainActivity extends Activity {
             text("Mailbefehle nur vom hinterlegten Firmenpostfach, Betreff wie unten; Groß-/Kleinschreibung ist egal. Für einen Import genau eine Excel-Datei anhängen. Signaturbilder werden ignoriert; andere zusätzliche Dateien sind nicht erlaubt.",16,MUTED);
             text("NLL Material\n\nNLL Personen\n\nNLL Export",15,INK).setTextIsSelectable(true);
         }
-        if(config.connected) button("Automatischen Mailzugriff deaktivieren",false,() -> {
+        if(config.connected && mailSetupExpanded) button("Automatischen Mailzugriff deaktivieren",false,() -> {
             if(!requireAdmin() || mailBusy()) return;
             MailConfig.prefs(this).edit().putBoolean("connected",false).apply();MailJobService.schedule(this);render();
         });
@@ -460,7 +473,7 @@ public class MainActivity extends Activity {
         AlertDialog dialog=form("Mail einrichten",layout);
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             if(!requireAdmin() || mailBusy()) return;
-            try {MailConfig.save(this,gmail.getText().toString(),recipient.getText().toString(),automatic.isChecked());MailJobService.schedule(this);dialog.dismiss();render();}
+            try {MailConfig.save(this,gmail.getText().toString(),recipient.getText().toString(),automatic.isChecked());MailJobService.schedule(this);mailSetupExpanded=false;dialog.dismiss();render();}
             catch(Exception e) {recipient.setError(e.getMessage());}
         });
     }
@@ -489,15 +502,15 @@ public class MainActivity extends Activity {
                 MailConfig current=new MailConfig(this);
                 if(!current.gmail.equals(requested.gmail) || !current.recipient.equals(requested.recipient)) return;
                 if(!connected) {error("Gmail-Postfach konnte nicht bestätigt werden. Kontowahl und API-Freigabe prüfen.");return;}
-                MailConfig.prefs(this).edit().putBoolean("connected",true).apply();MailJobService.schedule(this);notice="Gmail-Verbindung bestätigt";render();
+                MailConfig.prefs(this).edit().putBoolean("connected",true).apply();MailJobService.schedule(this);notice="Gmail-Verbindung bestätigt";mailSetupExpanded=false;render();
             });
         },"mail-authorize").start();
     }
     private void syncMail() {
         if(!requireAdmin() || mailBusy()) return;
         final android.content.Context app=getApplicationContext();
-        new Thread(() -> {MailSync.run(app);runOnUiThread(() -> {if(!isDestroyed()) render();});},"mail-manual").start();
-        notice="Synchronisierung gestartet";render();
+        writing=true;OperationProgress progress=operation("Synchronisierung läuft …","Google-Verbindung herstellen …");
+        new Thread(() -> {MailSync.run(app,progress);runOnUiThread(() -> {writing=false;if(!isDestroyed()) {progress.dismiss();render();}});},"mail-manual").start();
     }
     private void localMailExport(MailConfig config) { localMailExport(config,false); }
     private void localMailExport(MailConfig config,boolean archiveAfterSend) {
@@ -507,17 +520,18 @@ public class MainActivity extends Activity {
             .setNegativeButton("Abbrechen",null).setPositiveButton("Senden",(d,w) -> {
                 if(!requireAdmin() || mailBusy()) return;
                 final android.content.Context app=getApplicationContext();
+                writing=true;OperationProgress progress=operation("Bericht per Mail senden …","Bericht vorbereiten …");
                 new Thread(() -> {
-                    if(!MailSync.BUSY.compareAndSet(false,true)) return;
+                    if(!MailSync.BUSY.compareAndSet(false,true)) {runOnUiThread(() -> {writing=false;if(!isDestroyed()){progress.dismiss();error("Synchronisierung läuft bereits.");}});return;}
                     try(Store local=new Store(app)) {
                         org.json.JSONObject payload=new org.json.JSONObject().put("headers",new org.json.JSONArray()
                             .put(new org.json.JSONObject().put("name","From").put("value",config.recipient))
                             .put(new org.json.JSONObject().put("name","Subject").put("value","NLL Export")));
                         String id="local-"+UUID.randomUUID();
-                        MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id",id).put("internalDate",System.currentTimeMillis()).put("payload",payload),archiveAfterSend);
+                        MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id",id).put("internalDate",System.currentTimeMillis()).put("payload",payload),archiveAfterSend,progress);
                     } catch(Exception e) {MailConfig.status(app,"Export konnte nicht vorbereitet werden.");}
                     finally {MailSync.BUSY.set(false);}
-                    MailSync.run(app);runOnUiThread(() -> {if(!isDestroyed()) render();});
+                    MailSync.run(app,progress);runOnUiThread(() -> {writing=false;if(!isDestroyed()) {progress.dismiss();render();}});
                 },"mail-export").start();
             }).show();
     }
@@ -697,8 +711,8 @@ public class MainActivity extends Activity {
         base(people ? "Personen" : "Material & Kältemittel", "Stammdaten und Lagerzuordnung verwalten");
         button(people ? "+ Person anlegen" : "+ Material anlegen",true,() -> { if(people) addPerson(); else addMaterial("",false); });
         button("Aus Excel importieren (.xlsx)",false,() -> beginImport(people));
-        text(people ? "Excel-Spalten: Personencode, Name, Lagernummer (optional)" : "Excel: Firmenliste mit Title und Code (Material / Stk) oder Vorlage mit Scancode, Mat Nummer, Beschreibung, Art, Einheit. Lager ist optional.",15,MUTED);
-        text("Erste Tabelle, erste Zeile = Überschriften. Codes als Text speichern, damit führende Nullen erhalten bleiben. Vorhandene Codes werden nicht überschrieben.",15,MUTED);
+        text(people ? "Excel-Spalten: Personencode, Name, Lagernummer (optional)" : "Excel: Code/Scancode und Beschreibung/Title sind Pflicht. Mat Nummer, Art, Einheit und Lager sind optional. Standard: Nummer = Code, Art = Material, Einheit = Stk.",15,MUTED);
+        text("Erste Tabelle, erste Zeile = Überschriften. Codes als Text speichern, damit führende Nullen erhalten bleiben. Bei vorhandenen Codes kannst du Aktualisieren, Überspringen oder Abbrechen wählen.",15,MUTED);
         if(people) {
             for(Store.Person entry:store.people()) button(entry.name+" · Lager: "+(entry.location.isEmpty() ? "nicht zugeordnet" : entry.location),false,() -> editAssignment(entry.code,true));
         } else {
@@ -726,10 +740,29 @@ public class MainActivity extends Activity {
     private void editAssignment(String code,boolean people) {
         if(!requireAdmin()) return;
         LinearLayout layout=dialogBody();
-        String current=people ? store.person(code).location : store.material(code).location;
+        Store.Person existingPerson=people ? store.person(code) : null;
+        Store.Material existingMaterial=people ? null : store.material(code);
+        if(people ? existingPerson==null : existingMaterial==null) {error("Eintrag nicht mehr vorhanden.");return;}
+        String current=people ? existingPerson.location : existingMaterial.location;
         EditText location=people ? dialogField(layout,"Lagernummer",current) : null;
         Spinner warehouse=people ? null : warehouseDropdown(layout,"Lager",settings.locations(),current);
         AlertDialog dialog=form(people ? "Mitarbeiterlager zuordnen" : "Materiallager zuordnen",layout);
+        Button delete=new Button(this);delete.setText(people ? "Person löschen" : "Material löschen");layout.addView(delete);
+        delete.setOnClickListener(v -> {
+            if(!requireAdmin() || mailBusy()) return;
+            new AlertDialog.Builder(this).setTitle(people ? "Person löschen?" : "Material löschen?")
+                .setMessage(code+" · "+(people ? existingPerson.name : existingMaterial.description)+"\n\nAus der Stammdatenliste löschen? Bereits erfasste Bewegungen und Archive bleiben erhalten. Ein späterer Import kann den Eintrag erneut anlegen.")
+                .setNegativeButton("Abbrechen",null).setPositiveButton("Löschen",(d,w) -> {
+                    if(!requireAdmin() || mailBusy()) return;
+                    if(!MailSync.BUSY.compareAndSet(false,true)) {error("Hintergrundverarbeitung läuft. Bitte erneut versuchen.");return;}
+                    try {
+                        store.deleteEntry(code,people);
+                        if(people && person!=null && person.code.equals(code)) {person=null;selected=null;draftTo="";draftScan="";}
+                        if(!people && selected!=null && selected.code.equals(code)) {selected=null;draftScan="";}
+                        dialog.dismiss();notice="✓ Eintrag gelöscht · Bewegungen und Archiv bleiben erhalten";render();
+                    } catch(Exception e) {error(e.getMessage());} finally {MailSync.BUSY.set(false);}
+                }).show();
+        });
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             if(!requireAdmin()) return;
             try {
@@ -854,7 +887,7 @@ public class MainActivity extends Activity {
         if(result!=RESULT_OK || data==null || data.getData()==null) {notice="Export abgebrochen · keine Archivierung"; render(); return;}
         if(exportCutoff<=0) {error("Exportauftrag fehlt. Bitte Bericht erneut starten. Es wurde nichts archiviert."); return;}
         Uri uri=data.getData(); writing=true;
-        AlertDialog progress=new AlertDialog.Builder(this).setTitle("Bericht wird gespeichert …").setMessage("Bitte warten. Anschließend wird die Archivierung bestätigt.").setCancelable(false).create(); progress.show();
+        OperationProgress progress=operation("Bericht wird gespeichert …","Bericht vorbereiten …");
         final long cutoff=exportCutoff; final boolean archive=exportArchive; final boolean excel=exportExcel;
         new Thread(() -> {
             String message;
@@ -862,12 +895,13 @@ public class MainActivity extends Activity {
                 int rows;
                 try(OutputStream stream=getContentResolver().openOutputStream(uri,"wt")) {
                     if(stream==null) throw new IOException("Kein Ausgabestream");
-                    if(excel) rows=store.writeXlsx(stream,cutoff,archive);
+                    if(excel) rows=store.writeXlsx(stream,cutoff,archive,progress);
                     else try(BufferedWriter writer=new BufferedWriter(new OutputStreamWriter(stream,StandardCharsets.UTF_8))) {
-                        rows=store.writeCsv(writer,cutoff,archive);
+                        rows=store.writeCsv(writer,cutoff,archive,progress);
                     }
                 }
                 if(!archive) {
+                    progress.update(0,0,"Datei gespeichert · Bewegungen archivieren …");
                     try {store.archive(cutoff,UUID.randomUUID().toString());}
                     catch(Exception e) {throw new ArchiveException();}
                 }
@@ -891,7 +925,7 @@ public class MainActivity extends Activity {
     private void readImport(Uri uri) {
         if(!requireAdmin()) return;
         writing=true;
-        AlertDialog progress=new AlertDialog.Builder(this).setTitle("Excel wird geprüft …").setMessage("Die Datenbank wird noch nicht geändert.").setCancelable(false).create(); progress.show();
+        OperationProgress progress=operation("Excel wird geprüft …","Datei öffnen …");
         final boolean people=importPeople;
         new Thread(() -> {
             java.io.File temporary=null;
@@ -902,13 +936,12 @@ public class MainActivity extends Activity {
                     byte[] buffer=new byte[8192]; int n; long total=0;
                     while((n=in.read(buffer))!=-1) {total+=n; if(total>20*1024*1024) throw new IOException("Maximale Dateigröße: 20 MB."); out.write(buffer,0,n);}
                 }
-                List<String[]> rows=ExcelImport.read(temporary,people);
+                List<String[]> rows=ExcelImport.read(temporary,people,progress);
+                progress.update(0,0,"Vorhandene Codes prüfen …");
+                int conflicts=store.importConflicts(rows,people);
                 runOnUiThread(() -> {
-                    writing=false; if(isFinishing() || isDestroyed()) return; progress.dismiss();
-                    String[] first=rows.get(0);
-                    new AlertDialog.Builder(this).setTitle(rows.size()+" "+(people ? "Personen" : "Materialien")+" importieren?")
-                        .setMessage("Erster Eintrag: "+first[0]+" · "+first[1]+"\n\nVorhandene Codes führen zum Abbruch des gesamten Imports. Bestehende Einträge bleiben unverändert.")
-                        .setNegativeButton("Abbrechen",null).setPositiveButton("Importieren",(d,w) -> saveImport(rows,people)).show();
+                    writing=false;if(isFinishing() || isDestroyed()) return;progress.dismiss();
+                    confirmImport(rows,people,conflicts);
                 });
             } catch(Exception e) {
                 String message=e instanceof java.util.zip.ZipException ? "Bitte eine echte Excel-Datei (.xlsx) verwenden. Alte .xls-Dateien zuerst als .xlsx speichern." : e.getMessage();
@@ -916,23 +949,46 @@ public class MainActivity extends Activity {
             } finally {if(temporary!=null) temporary.delete();}
         },"excel-read").start();
     }
-    private void saveImport(List<String[]> rows,boolean people) {
+    private void confirmImport(List<String[]> rows,boolean people,int conflicts) {
         if(!requireAdmin()) return;
+        String[] first=rows.get(0);
+        AlertDialog.Builder choice=new AlertDialog.Builder(this)
+            .setTitle(rows.size()+" "+(people ? "Personen" : "Materialien")+" importieren?")
+            .setMessage("Erster Eintrag: "+first[0]+" · "+first[people ? 1 : 2]+"\n\n"+
+                (conflicts>0 ? conflicts+" Codes sind bereits vorhanden. Was soll mit diesen Einträgen geschehen? Neue Einträge werden ergänzt. Nicht mitgelieferte Zusatzspalten und historische Buchungen bleiben erhalten." : "Neue Einträge werden ergänzt. Die Übernahme erfolgt vollständig oder gar nicht."))
+            .setNegativeButton("Abbrechen",null);
+        if(conflicts>0) choice.setNeutralButton("Vorhandene überspringen",(d,w) -> saveImport(rows,people,Store.ImportPolicy.SKIP))
+            .setPositiveButton("Vorhandene aktualisieren",(d,w) -> saveImport(rows,people,Store.ImportPolicy.UPDATE));
+        else choice.setPositiveButton("Importieren",(d,w) -> saveImport(rows,people,Store.ImportPolicy.REJECT));
+        choice.show();
+    }
+    private void saveImport(List<String[]> rows,boolean people) {saveImport(rows,people,Store.ImportPolicy.REJECT);}
+    private void saveImport(List<String[]> rows,boolean people,Store.ImportPolicy policy) {
+        if(!requireAdmin() || mailBusy()) return;
+        if(!MailSync.BUSY.compareAndSet(false,true)) {error("Hintergrundverarbeitung läuft. Bitte erneut versuchen.");return;}
         writing=true;
-        AlertDialog progress=new AlertDialog.Builder(this).setTitle("Daten werden importiert …").setCancelable(false).create(); progress.show();
+        OperationProgress progress=operation("Daten werden importiert …","Import vorbereiten …");
         new Thread(() -> {
-            String failure=null;
-            try {store.importRows(rows,people);} catch(Exception e) {failure=e.getMessage();}
-            final String errorMessage=failure;
+            String failure=null;int conflicts=0;int[] result=null;
+            try {result=store.importRows(rows,people,policy,progress);}
+            catch(Store.ImportConflict e) {conflicts=e.count;}
+            catch(Exception e) {failure=e.getMessage()==null ? "Import konnte nicht gespeichert werden." : e.getMessage();}
+            finally {MailSync.BUSY.set(false);}
+            final String errorMessage=failure;final int collisionCount=conflicts;final int[] counts=result;
             runOnUiThread(() -> {
-                writing=false; if(isFinishing() || isDestroyed()) return; progress.dismiss();
+                writing=false;if(isFinishing() || isDestroyed()) return;progress.dismiss();
+                if(collisionCount>0) {confirmImport(rows,people,collisionCount);return;}
                 if(errorMessage!=null) error("Import vollständig zurückgerollt. Keine Daten geändert.\n\n"+errorMessage);
-                else {notice="✓ "+rows.size()+" Einträge importiert"; render();}
+                else {
+                    if(person!=null) person=store.person(person.code);
+                    notice="✓ "+counts[0]+" ergänzt, "+counts[1]+" aktualisiert, "+counts[2]+" übersprungen";render();
+                }
             });
         },"excel-save").start();
     }
     private static class ArchiveException extends Exception { private static final long serialVersionUID=1L; }
     @Override protected void onDestroy() {
+        if(operationProgress!=null) operationProgress.dismiss();
         if (store != null && !writing) store.close();
         super.onDestroy();
     }

@@ -15,11 +15,12 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.5.0, Code 6 | Signierter Release; Betreiber meldete am 20.10.2026 erfolgreichen Gerätetest. Keine einzelnen Prüfschritte genannt. |
 | 0.6.0, Code 8 | Vorheriger GitHub-Release `v0.6.0`. Gmail und weitere Bedienabläufe. Noch keine umfassende Honeywell-Bestätigung. |
 | 0.6.1-dev, Code 9 | Früherer lokaler Entwicklungsstand, keine stabile Veröffentlichung. |
-| 0.6.1, Code 10 | Aktueller Quellstand, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
+| 0.6.1, Code 10 | Letzter veröffentlichter Quellstand, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
+| 0.6.2-dev, Code 11 | Aktueller Entwicklungsstand: sechs Bedien-/Importänderungen, 108 Tests; nicht signiert oder veröffentlicht. |
 
 Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
 
-Letzter funktionaler Prüfstand: 97 lokale Tests, Release-Build und Release-Lint erfolgreich, einschließlich nachträglicher About-Ergänzung. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
+Letzter funktionaler Prüfstand: 108 lokale Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich für 0.6.2-dev. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
 
 ## Arbeitsverzeichnis und GitHub
 
@@ -54,13 +55,19 @@ Gradle 8.13, AGP 8.9.2, Java-Sprachziel 17, JDK 21 lokal, API 26–35. `com.goog
 
 - Festes Schloss oben rechts: geschlossen = normaler Betrieb; offen = Einstellungen freigegeben. Zurück als klickbarer Pfeil oben links.
 - Normalbetrieb: Personenanmeldung und Material-/Kältemittelbewegungen. Stammdaten, Personenverwaltung, Listen, Import/Export, Archiv, Mail, Sicherung, Updates und About sind geschützt.
-- Kein Standardpasswort. Einrichtung mindestens acht Zeichen, gesalzener PBKDF2-HMAC-SHA256-Hash mit 120.000 Iterationen. Freigabe nur im RAM; Hintergrundwechsel/Neustart sperrt. Bereits autorisierte Dateidialoge/Schreibvorgänge haben begrenzte Ausnahmen; Prozessverlust autorisiert nichts erneut.
+- Kein Standardpasswort. Ab 0.6.2-dev Einrichtung mit vierstelliger numerischer PIN oder mindestens acht Zeichen langem Passwort; vorhandene Passwörter bleiben gültig, gesalzener PBKDF2-HMAC-SHA256-Hash mit 120.000 Iterationen. Freigabe nur im RAM; Hintergrundwechsel/Neustart sperrt. Bereits autorisierte Dateidialoge/Schreibvorgänge haben begrenzte Ausnahmen; Prozessverlust autorisiert nichts erneut.
 - Schutz auch direkt vor schreibenden Dialog- und Callback-Aktionen prüfen. `isAdminScreen()` und `requireAdmin()` bei neuen Menüpunkten beachten.
 - Unbekannter Scan im Normalbetrieb: Nach App-Gerätepasswort darf genau dieser Artikel mit bereits gescanntem Code und passender Artikelart angelegt werden. Anschließend direkt buchen und wieder sperren. Abbruch sperrt ebenfalls.
 - Materiallager liefert den Standard für „Von Lager“. „Nach Lager“ ist Dropdown und beginnt bei jeder neuen Buchung mit der Lagernummer des aktuell angemeldeten Mitarbeiters.
 - Ab 0.6.1 Pflichtauswahl Entnahme/Rückgabe/Umlagerung. Historische Bewegungen behalten eine leere Bewegungsart; keine nachträgliche Vermutung.
 - Personen-Code dient der Zuordnung, nicht einer individuellen starken Authentisierung.
 - Keine Bestandsberechnung, Werkzeugverwaltung, Nachbestellungen, Warenkorb oder getrennte Flaschen-/kg-Erfassung vorhanden.
+
+## Ergänzte Bedienabläufe in 0.6.2-dev
+
+`WorkProgress` ist der callbackbasierte Fortschritt für Parser, Store, Excel-/CSV-Ausgabe und MailSync. `OperationProgress` zeigt einen horizontalen Balken samt Phase; unbekannte Dauer bleibt unbestimmt. Anzeige lebt nur in der Activity, Daten-/Mailtransaktionen dürfen unabhängig davon sauber fertig werden. Keine geschätzten globalen Prozentwerte als Beweis einer abgeschlossenen Übernahme verwenden. Bestehende Overloads ohne Callback bleiben für Hintergrundjobs und Tests verfügbar.
+
+Sync-Einrichtung bei `config.ready()` zunächst eingeklappt, über Verbindung bearbeiten erweiterbar. Fehlende Verbindung zeigt wieder Setup/Google-Autorisierung. Personen/Material haben im Lagerzuordnungsdialog eine Löschaktion mit erneuter Adminprüfung und Schutz vor gleichzeitiger Mailverarbeitung. `Store.deleteEntry` löscht ausschließlich Stammdaten; historische Snapshots bleiben unverändert. Bei Löschung aktiver Person/Artikel entfernt die UI deren aktuelle Zuordnung.
 
 ## Datenbank und Migrationen
 
@@ -82,7 +89,7 @@ Alte Lagereinstellungen aus Preferences bleiben als Fallback lesbar. Passwörter
 
 - Firmenliste: `Title` → Beschreibung, `Code` → Scan- und Materialnummer; Art Material, Einheit Stk. `Typ`, `Bemerkung`, `BST Menge` ignorieren. „BST Menge“ meint Bestellung, keine Bestands- oder Bewegungsübernahme. Optionale Lager-Spalte. Bisher nur Foto der Originaldatei erhalten; Tests verwenden nachgebildete XLSX-Dateien.
 - Alte Material-/Personenvorlagen bleiben kompatibel. Echte XLSX, erste Tabelle, Header in erster nichtleerer Zeile. Kein XLS/XLSM, Passwortschutz oder Formeln. Maximal 20 MB/10.000 Einträge/200 Zeichen je Feld.
-- Lokaler Dateiimport lehnt bereits vorhandene Codes ab; Transaktion komplett oder gar nicht. Mailimport ergänzt/aktualisiert und behält nicht enthaltene Einträge. Fehlende Lager-Spalte erhält beim Mailupdate die bisherige Zuordnung; explizit leere Lager-Zelle leert sie.
+- Ab 0.6.2-dev fragt der Dateiimport bei vorhandenen Codes nach Aktualisieren/Überspringen/Abbrechen; Transaktion komplett oder gar nicht. Neue Codes werden ergänzt, Mehrfachcodes innerhalb der Datei bleiben ungültig. Der Standard-Store-Aufruf bleibt intern strikt; die UI übergibt nach Auswahl ImportPolicy. Mailimport ergänzt/aktualisiert und behält nicht enthaltene Einträge. Ab 0.6.2-dev sind nur Materialcode und Beschreibung Pflicht; Nummer/Art/Einheit/Lager optional. Fehlende Materialnummer/Art/Einheit werden bei Neuanlage mit Code/Material/Stk vorbelegt; bei Aktualisierung bleiben nicht mitgelieferte Spalten erhalten. ExcelImport liefert dafür MappedRows mit Spaltenpräsenz – nicht unbedacht in eine normale ArrayList kopieren, sonst geht diese Information verloren. Fehlende Lager-Spalte erhält beim Mailupdate die bisherige Zuordnung; explizit leere Lager-Zelle leert sie.
 - Export ab 0.6.1, genau diese Reihenfolge: **Code; Beschreibung; Menge; Bewegungsart; Mitarbeiter; Datum; Lagerort (Von -> Nach); Buchung erfolgt?** Letzte Spalte leer für Materialwirtschaft. Datum enthält Uhrzeit. Keine IDs/Einheiten zusätzlich einschieben.
 - XLSX typisiert Mengen und Datum, Codes als Text; Filter und fixierte Kopfzeile. CSV UTF-8-BOM, Semikolon, Dezimalkomma, zitierte Textfelder mit Schutz gegen Excel-Formelausführung.
 - Snapshot des Berichts festhalten. Nur nach erfolgreichem Dateischreiben und Schließen archivieren; Abbruch/Fehler lässt Bewegungen offen. Spätere Buchungen gehören nicht in den Abschluss. Archivexport bleibt möglich.
@@ -135,7 +142,7 @@ Zwei Emulatoren waren vorhanden: „Medium Phone API 37.0“ mit älteren Instal
 
 ## Nächste Aufgaben und bekannte Grenzen
 
-1. Veröffentlichung 0.6.1 abgeschlossen: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1. APK und SHA256SUMS hochgeladen; anonymer Download und vollständige Signaturprüfung erfolgreich. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Nächster Schritt ist der Honeywell-Test.
+1. Veröffentlichung 0.6.1 abgeschlossen: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1. APK und SHA256SUMS hochgeladen; anonymer Download und vollständige Signaturprüfung erfolgreich. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Nächster Schritt ist der Honeywell-Test. 0.6.2-dev ist zusätzlich lokal/GitHub vorbereitet; ein späterer stabiler Release benötigt einen versionCode höher als 11 sowie erneute Signierung.
 2. Auf Honeywell Update von 0.5.0 mit Datenerhalt, Scanner-Eingabe, Passwortschutz und unbekannte Artikel testen.
 3. Echte Firmen-XLSX statt Foto prüfen; neues Berichtslayout und Pflichtbewegungsart mit Betreiber bestätigen.
 4. Sicherungsordner, Wiederherstellung, Android-Installationsfreigabe und späteres In-App-Update auf echter Hardware testen.

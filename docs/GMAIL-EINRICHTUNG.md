@@ -25,6 +25,10 @@ Google stuft Gmail-Lesezugriff als eingeschränkten Scope ein. Für kleine, beka
 
 Quellen: [Android-Autorisierung](https://developer.android.com/identity/authorization), [Gmail-Scopes](https://developers.google.com/workspace/gmail/api/auth/scopes), [Testnutzer und Ablauf](https://support.google.com/cloud/answer/15549945), [Verifizierungsausnahmen](https://support.google.com/cloud/answer/13464323).
 
+## Ergänzungen für 0.6.2-dev (noch nicht veröffentlicht)
+
+Bei verbundener Anbindung sind Einrichtungsoptionen standardmäßig ausgeblendet; „Verbindung bearbeiten“ zeigt sie wieder. Manueller Sync und Mailversand zeigen Fortschrittsbalken mit aktuellem Arbeitsschritt. Im Materialimport reichen Code und Beschreibung/Title; neue Einträge erhalten Nummer = Code, Art Material und Einheit Stk. Bei Aktualisierung bleiben fehlende Zusatzspalten erhalten. Mailimport aktualisiert vorhandene Codes wie bisher ohne lokale Rückfrage; die Auswahl Aktualisieren/Überspringen betrifft den Dateiimport.
+
 ## Bedienung
 
 1. Schloss entsperren → **Mail & Synchronisierung** → **Postfach & Empfänger einrichten**.

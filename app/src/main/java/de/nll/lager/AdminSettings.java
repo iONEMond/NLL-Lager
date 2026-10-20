@@ -18,7 +18,7 @@ public final class AdminSettings {
     public AdminSettings(Context context) { app=context.getApplicationContext();prefs=context.getSharedPreferences("admin-settings",Context.MODE_PRIVATE); }
     public boolean hasPassword() { return prefs.contains("passwordHash"); }
     public void setPassword(char[] password) {
-        if(password.length<8) throw new IllegalArgumentException("Mindestens 8 Zeichen verwenden.");
+        if(password.length<8 && !new String(password).matches("[0-9]{4}")) throw new IllegalArgumentException("Eine vierstellige PIN oder mindestens 8 Zeichen verwenden.");
         byte[] salt=new byte[16]; new SecureRandom().nextBytes(salt);
         String hash=Base64.encodeToString(derive(password,salt),Base64.NO_WRAP);
         if(!prefs.edit().putString("passwordSalt",Base64.encodeToString(salt,Base64.NO_WRAP)).putString("passwordHash",hash).commit())

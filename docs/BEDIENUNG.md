@@ -2,14 +2,14 @@
 
 [Zur Projektstartseite](../README.md) · [Versionshistorie](../CHANGELOG.md)
 
-Die folgenden Anleitungen beschreiben den veröffentlichten Stand 0.6.1. Funktionen, die erst ab 0.6.1 enthalten sind, sind gekennzeichnet.
+Die Anleitung umfasst den veröffentlichten Stand 0.6.1 sowie ausdrücklich gekennzeichnete Ergänzungen für 0.6.2-dev. 0.6.2 ist noch nicht als Release verfügbar.
 
 ## Start und Buchung
 
 Unter **Einstellungen → Über die App (About)** stehen die tatsächlich installierte Version und Buildnummer, Ausgabe (Haupt-App/Vorschau), Paketname, Android-/API-Version und Datenbankversion sowie Hinweise zu Datenhaltung, Sicherung, Mail, Updates und Projektanleitungen. Ab 0.6.1.
 
 1. Scanner als Tastatureingabe mit Enter konfigurieren. Das jeweilige Codefeld muss fokussiert sein.
-2. Schloss oben rechts öffnen. Beim ersten Mal eigenes Passwort mit mindestens 8 Zeichen samt Wiederholung festlegen.
+2. Schloss oben rechts öffnen. Beim ersten Mal eigenes Passwort mit mindestens 8 Zeichen samt Wiederholung festlegen. Ab 0.6.2-dev ist alternativ eine vierstellige PIN erlaubt; bestehende Passwörter bleiben gültig.
 3. Unter **Lageroptionen verwalten** die allgemeinen Lager einrichten. Personen und Materialien manuell anlegen oder aus Excel importieren.
 4. Bei Personen die **Lagernummer** pflegen; bei Materialien das **Lager** auswählen. Vorhandene Einträge zum Nachpflegen antippen.
 5. Offenes Schloss zum Sperren antippen. Im normalen Betrieb sind nur Personenanmeldung, Artikelwahl und Material-/Kältemittelbewegungen verfügbar.
@@ -29,13 +29,20 @@ Ab 0.6.1 zusätzlich Firmenformat: **Title, Code, Typ, Bemerkung, BST Menge**. N
 
 Materialspalten der bisherigen Vorlage: `Scancode`, `Mat Nummer`, `Beschreibung`, `Art`, `Einheit`; zusätzlich optional `Lager`. Art ist Material oder Kältemittel. Personenspalten: `Personencode`, `Name`; zusätzlich optional `Lagernummer`.
 
-Die vorhandenen Vorlagen ohne Lager-Spalte bleiben kompatibel. Fehlende Zuordnungen anschließend im geschützten Menü pflegen. Vorhandene Codes werden nicht überschrieben; doppelte Codes brechen den gesamten Import ab. Die Datenbankübernahme erfolgt als Transaktion.
+Die vorhandenen Vorlagen ohne Lager-Spalte bleiben kompatibel. Fehlende Zuordnungen anschließend im geschützten Menü pflegen. Bis 0.6.1 brechen bereits vorhandene Codes den Dateiimport ab. Ab 0.6.2-dev wird bei vorhandenen Codes nach **Vorhandene aktualisieren**, **Vorhandene überspringen** oder **Abbrechen** gefragt. Bei beiden Übernahmeoptionen werden neue Einträge ergänzt; nicht in der Datei enthaltene Einträge bleiben erhalten. Nicht mitgelieferte Zusatzspalten bleiben beim Aktualisieren unverändert. Mehrfachcodes innerhalb derselben Datei sind weiterhin ungültig. Die Datenbankübernahme erfolgt als Transaktion.
 
 Nur echte `.xlsx`, erste Tabelle, erste nichtleere Zeile als Überschrift; Spalten dürfen umgeordnet werden. Maximal 10.000 Einträge, 20 MB, 200 Zeichen pro Feld. Formeln zuvor als Werte speichern. `.xls`, `.xlsm` und Passwortschutz werden nicht unterstützt.
 
 **Codes und Lagernummern vor der Eingabe in Excel als Text formatieren**, damit führende Nullen erhalten bleiben.
 
 Mailbefehle: **NLL Material**, **NLL Personen**, **NLL Export**. Kein Auftragsschlüssel erforderlich; nur die hinterlegte Firmenabsenderadresse wird zugelassen. Genau eine XLSX-Datei pro Import, Signaturbilder werden ignoriert.
+
+## Ergänzungen ab 0.6.2-dev
+
+- Material: Nur **Code** (auch Scancode/Barcode) und **Beschreibung** (auch Title) sind Pflichtspalten. Mat Nummer, Art, Einheit und Lager dürfen fehlen. Bei neuen Einträgen gelten Nummer = Code, Art = Material, Einheit = Stk, Lager leer; leere Materialnummer/Art/Einheit verwenden dieselben Standardwerte. Explizite Art weiterhin Material oder Kältemittel. Bei Personen bleiben Code und Name Pflicht; Beschreibung/Title ist auch als Name zulässig, Lagernummer optional.
+- Personen-/Materialliste: Eintrag antippen → **Person löschen** bzw. **Material löschen** → bestätigen. Historische Bewegungen und Archiv werden nicht gelöscht. Gelöschte Einträge können durch einen späteren Import wieder angelegt werden.
+- Import, Datei-/Mail-Export und manuelle Synchronisierung zeigen einen Fortschrittsbalken. Er zeigt je Arbeitsschritt die Datensatzanzahl, wenn bekannt, sonst eine laufende Aktivität. Erst die abschließende Erfolgsmeldung bestätigt die Übernahme bzw. Archivierung.
+- Bei verbundener Gmail-Anbindung werden Einrichtungsoptionen ausgeblendet. **Verbindung bearbeiten** zeigt sie bei Bedarf wieder; fehlende Verbindung erfordert erneut Google-Freigabe.
 
 ## Export und Daten
 
