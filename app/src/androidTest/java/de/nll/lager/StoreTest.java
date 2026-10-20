@@ -31,9 +31,9 @@ public class StoreTest {
         assertEquals(1,store.count(false)); assertEquals(0,store.count(true));
         StringWriter csv=new StringWriter(); assertEquals(1,store.writeCsv(csv,store.cutoff(),false));
         String report=csv.toString();
-        assertTrue(report.contains("\"0,125\"")); assertTrue(report.contains("\"0007\";\"Anna\""));
-        assertTrue(report.contains("\"MAT-17\";\"Ventil; ½ Zoll\""));
-        assertTrue(report.contains("\"Hauptlager\";\"Fahrzeug 4\""));
+        assertTrue(report.contains("\"0,125\"")); assertTrue(report.contains("\"Anna\""));
+        assertTrue(report.contains("\"00123\";\"Ventil; ½ Zoll\""));
+        assertTrue(report.contains("\"Hauptlager -> Fahrzeug 4\""));
         assertTrue(report.matches("(?s).*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*"));
     }
     @Test public void archiveOnlyExportedSnapshotAndAllowArchiveReexport() throws Exception {
@@ -44,7 +44,7 @@ public class StoreTest {
         assertEquals(1,store.count(false)); assertEquals(1,store.count(true));
         assertNotNull(store.material("00123")); assertNotNull(store.person("0007"));
         StringWriter archive=new StringWriter(); assertEquals(1,store.writeCsv(archive,store.archiveCutoff(),true));
-        assertTrue(archive.toString().contains("report-1"));
+        assertTrue(archive.toString().contains("Hauptlager -> Fahrzeug 4"));
         assertEquals(0,store.archive(cutoff,"report-2"));
     }
     @Test public void writeFailurePreservesAllMovements() throws Exception {

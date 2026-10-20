@@ -11,6 +11,10 @@ import java.util.zip.ZipOutputStream;
 /** Streaming OOXML export. Text identifiers remain text, amounts and dates are typed cells. */
 public final class ExcelExport {
     private ExcelExport() {}
+    static final String[] HEADERS={"Code","Beschreibung","Menge","Bewegungsart","Mitarbeiter","Datum","Lagerort (Von -> Nach)","Buchung erfolgt?"};
+    static String[] values(Cursor c) {
+        return new String[]{c.getString(2),c.getString(4),c.getString(9),c.getString(13),c.getString(11),c.getString(1),c.getString(7)+" -> "+c.getString(8),""};
+    }
     private static final String NS="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
     private static final String REL="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     public static int write(OutputStream output,Cursor cursor) throws IOException {
@@ -22,25 +26,26 @@ public final class ExcelExport {
             entry(zip,"xl/styles.xml","<styleSheet xmlns=\""+NS+"\"><numFmts count=\"2\"><numFmt numFmtId=\"164\" formatCode=\"dd.mm.yyyy hh:mm:ss\"/><numFmt numFmtId=\"165\" formatCode=\"0.###\"/></numFmts><fonts count=\"2\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font><font><b/><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills><borders count=\"1\"><border/></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs><cellXfs count=\"4\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"164\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/><xf numFmtId=\"165\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles></styleSheet>");
             zip.putNextEntry(new ZipEntry("xl/worksheets/sheet1.xml"));
             Writer w=new OutputStreamWriter(zip,StandardCharsets.UTF_8);
-            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\""+NS+"\"><sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews><cols><col min=\"1\" max=\"14\" width=\"22\" customWidth=\"1\"/><col min=\"5\" max=\"5\" width=\"40\" customWidth=\"1\"/></cols><sheetData><row r=\"1\">");
-            String[] headers={"ID","Zeitpunkt","Scancode","Mat Nummer","Beschreibung","Art","Einheit","Von Lager","Nach Lager","Menge","Personencode","Person","Archivbericht","UTC-Offset"};
+            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\""+NS+"\"><sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews><cols><col min=\"1\" max=\"1\" width=\"18\" customWidth=\"1\"/><col min=\"2\" max=\"2\" width=\"40\" customWidth=\"1\"/><col min=\"3\" max=\"3\" width=\"14\" customWidth=\"1\"/><col min=\"4\" max=\"4\" width=\"20\" customWidth=\"1\"/><col min=\"5\" max=\"5\" width=\"26\" customWidth=\"1\"/><col min=\"6\" max=\"6\" width=\"24\" customWidth=\"1\"/><col min=\"7\" max=\"7\" width=\"36\" customWidth=\"1\"/><col min=\"8\" max=\"8\" width=\"24\" customWidth=\"1\"/></cols><sheetData><row r=\"1\">");
+            String[] headers=HEADERS;
             for(int i=0;i<headers.length;i++) text(w,cell(i,1),headers[i],3);
             w.write("</row>"); int count=0;
             while(cursor.moveToNext()) {
                 if(count>=1048575) throw new IOException("Zu viele Bewegungen für ein Excel-Blatt.");
                 int row=++count+1; w.write("<row r=\""+row+"\">");
                 OffsetDateTime time=OffsetDateTime.parse(cursor.getString(1));
-                for(int col=0;col<13;col++) {
-                    String ref=cell(col,row), value=cursor.isNull(col) ? "" : cursor.getString(col);
-                    if(col==1) {
+                String[] values=values(cursor);
+                for(int col=0;col<values.length;col++) {
+                    String ref=cell(col,row);
+                    if(col==5) {
                         double serial=time.toLocalDate().toEpochDay()-LocalDate.of(1899,12,30).toEpochDay()+time.toLocalTime().toNanoOfDay()/86400000000000d;
                         number(w,ref,Double.toString(serial),1);
-                    } else if(col==9) number(w,ref,value,2);
-                    else text(w,ref,value,0);
+                    } else if(col==2) number(w,ref,values[col],2);
+                    else text(w,ref,values[col],0);
                 }
-                text(w,cell(13,row),time.getOffset().toString(),0); w.write("</row>");
+                w.write("</row>");
             }
-            w.write("</sheetData><autoFilter ref=\"A1:N"+(count+1)+"\"/></worksheet>"); w.flush(); zip.closeEntry();
+            w.write("</sheetData><autoFilter ref=\"A1:H"+(count+1)+"\"/></worksheet>"); w.flush(); zip.closeEntry();
             return count;
         }
     }

@@ -6,6 +6,10 @@ Neueste veröffentlichte APK: **0.6.0**. Geplante Funktionen sind ausdrücklich 
 
 20.10.2026: Materialimport erkennt zusätzlich die Firmenliste mit `Title`, `Code`, `Typ`, `Bemerkung`, `BST Menge`. `Code` wird als Scancode und Materialnummer übernommen, `Title` als Beschreibung. Artikelart Material, Einheit Stk. Typ/Bemerkung und Bestellmenge werden nicht übernommen und erzeugen keine Bewegungen. Optionale Lager-Spalte wird unterstützt; fehlende Lager-Spalte erhält bei Mailupdates die bestehende Zuordnung. Gilt für Dateiauswahl und Gmail-Import. Alte Vorlagen bleiben kompatibel. Es werden weiterhin echte XLSX-Dateien benötigt; alte XLS-Dateien zuvor in Excel als XLSX speichern.
 
+Exportlayout für Materialwirtschaft: Code, Beschreibung, Menge, Bewegungsart, Mitarbeiter, Datum, Lagerort (Von -> Nach), Buchung erfolgt?. Die letzte Spalte bleibt leer. Einheit, IDs, separate Lager-/Personencodes und Archivkennungen sind nicht mehr Teil der Ausgabeliste. Excel-Datei, Mailanhang, CSV und erneuter Archivexport verwenden dieselben acht Spalten. Datum enthält weiterhin Datum und Uhrzeit.
+
+Neue Pflichtauswahl bei Buchung: Entnahme, Rückgabe oder Umlagerung. Dauerhaft mit der Bewegung gespeichert; ältere Bewegungen behalten eine leere Bewegungsart. Migration auf Datenbankversion 5 erhält offene und archivierte Bewegungen. Gesamtstand: 70 Tests, Debug-Build und Lint erfolgreich.
+
 Entwicklungsstand 0.6.1-dev, versionCode 9. Noch kein neuer Release; veröffentlichte APK bleibt 0.6.0. 67 Tests, Debug-Build und Lint erfolgreich. Prüfung mit nachgebildeten Beispieldateien; Originaldatei liegt bisher nur als Foto vor.
 
 ## 0.6.0 – 19.10.2026 · erster Gerätetest

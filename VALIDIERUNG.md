@@ -1,3 +1,7 @@
+# Ausgabeformat und Bewegungsart – 0.6.1-dev
+
+20.10.2026: Acht-Spalten-Export für XLSX, CSV, Mail und Archiv. 70 Tests, Debug-Build und Lint erfolgreich. Zusätzliche Tests prüfen genaue Kopfzeilen/Reihenfolge, Textcode mit führenden Nullen, numerische Menge, Excel-Datum, gespeicherte Bewegungsart, Mitarbeitername, kombinierten Lagerort, leere letzte Spalte und Filterbereich A:H. UI-Test prüft Pflichtauswahl und gespeicherte Entnahme. Migration 4→5 erhält Archiv und lässt historische Bewegungsarten leer. Noch nicht veröffentlicht; installierte Release-APK bleibt 0.6.0.
+
 # Importergänzung 0.6.1-dev – 20.10.2026
 
 Firmenlayout aus dem Foto mit Title, Code, Typ, Bemerkung und BST Menge nachgebildet. Drei zusätzliche XLSX-Tests prüfen numerische Codes, führende Nullen als Text, umgeordnete Spalten, optionale Lagerzuordnung, keine Buchungen durch Bestellmengen sowie Ablehnung doppelter Codes, fehlender Pflichtwerte und doppelter Überschriften. 67 Tests, Debug-Build und Lint erfolgreich. Originaldatei noch nicht geprüft; bisher nur Foto vorhanden. Noch kein signierter Build oder Release dieser Ergänzung.

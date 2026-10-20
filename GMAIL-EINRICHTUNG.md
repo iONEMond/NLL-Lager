@@ -45,6 +45,8 @@ Groß-/Kleinschreibung und äußere Leerzeichen sind egal. Zusätze wie `Re:` we
 
 ## Import und Export
 
+Ab 0.6.1-dev verwenden Excel-Mailberichte dasselbe neue Acht-Spalten-Layout wie der Dateiexport: Code, Beschreibung, Menge, Bewegungsart, Mitarbeiter, Datum, Lagerort (Von -> Nach), Buchung erfolgt?. Die letzte Spalte bleibt leer. Bereits wartende Mailberichte behalten ihren beim Erstellen gespeicherten Inhalt; sie werden nicht nachträglich umformatiert.
+
 Ab Entwicklungsstand 0.6.1-dev wird auch die Firmenliste mit Title und Code erkannt. Code dient als Scan-/Materialnummer, Title als Beschreibung; Art Material und Einheit Stk. Typ, Bemerkung und BST Menge (Bestellmenge) werden ignoriert. Bei fehlender Lager-Spalte bleibt eine vorhandene Lagerzuordnung im Mailimport erhalten. Diese Ergänzung ist noch nicht in Release 0.6.0 enthalten.
 
 - Beim Import genau einen `.xlsx`-Anhang senden. Zusätzliche Bilder mit MIME-Typ `image/*` (z. B. Firmensignatur) werden ignoriert und nicht heruntergeladen. Andere zusätzliche Dateien und mehrere Excel-Dateien werden abgelehnt. Die bisherigen Material-/Personenvorlagen bleiben kompatibel. Maximal 20 MB pro Anhang und 10.000 Datensätze; Formeln und doppelte Codes innerhalb der Datei werden abgelehnt.

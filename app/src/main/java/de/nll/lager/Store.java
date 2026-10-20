@@ -25,13 +25,14 @@ public final class Store extends SQLiteOpenHelper {
         public final String code, name, location;
         Person(String code, String name, String location) { this.code = code; this.name = name; this.location=location; }
     }
-    public Store(Context context) { super(context, "nll-lager.db", null, 4); }
+    public Store(Context context) { super(context, "nll-lager.db", null, 5); }
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE materials (code TEXT PRIMARY KEY, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE people (code TEXT PRIMARY KEY, name TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL, code TEXT NOT NULL, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, from_location TEXT NOT NULL, to_location TEXT NOT NULL, quantity TEXT NOT NULL, person_code TEXT NOT NULL, person_name TEXT NOT NULL, archived_batch TEXT)");
         db.execSQL("CREATE INDEX movements_pending ON movements(archived_batch, id)");
         createMailTables(db);
+        db.execSQL("ALTER TABLE movements ADD COLUMN movement_kind TEXT NOT NULL DEFAULT ''");
     }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if(oldVersion<2) {
@@ -40,6 +41,7 @@ public final class Store extends SQLiteOpenHelper {
         }
         if(oldVersion<3) createMailTables(db);
         else if(oldVersion<4) db.execSQL("ALTER TABLE mail_commands ADD COLUMN auto_archive INTEGER NOT NULL DEFAULT 0");
+        if(oldVersion<5) db.execSQL("ALTER TABLE movements ADD COLUMN movement_kind TEXT NOT NULL DEFAULT ''");
     }
     private static void createMailTables(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE mail_commands (id TEXT PRIMARY KEY, state TEXT NOT NULL, reply TEXT NOT NULL, cutoff INTEGER NOT NULL DEFAULT 0, result TEXT NOT NULL, created INTEGER NOT NULL, auto_archive INTEGER NOT NULL DEFAULT 0)");
@@ -92,17 +94,19 @@ public final class Store extends SQLiteOpenHelper {
         return result;
     }
     public int writeXlsx(java.io.OutputStream stream,long cutoff,boolean archived) throws IOException {
-        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,timestamp,code,number,description,type,unit,from_location,to_location,quantity,person_code,person_name,archived_batch FROM movements WHERE id<=? AND archived_batch IS "+(archived ? "NOT NULL" : "NULL")+" ORDER BY id",new String[]{Long.toString(cutoff)})) {
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,timestamp,code,number,description,type,unit,from_location,to_location,quantity,person_code,person_name,archived_batch,movement_kind FROM movements WHERE id<=? AND archived_batch IS "+(archived ? "NOT NULL" : "NULL")+" ORDER BY id",new String[]{Long.toString(cutoff)})) {
             return ExcelExport.write(stream,c);
         }
     }
-    public long book(Material material, String from, String to, String quantity, Person person) {
+    public long book(Material material, String from, String to, String quantity, Person person) {return book(material,from,to,quantity,person,"");}
+    public long book(Material material, String from, String to, String quantity, Person person,String kind) {
+        if(!kind.isEmpty() && !java.util.Arrays.asList("Entnahme","Rückgabe","Umlagerung").contains(kind)) throw new IllegalArgumentException("Ungültige Bewegungsart.");
         if (material == null || person == null) throw new IllegalArgumentException("Material und Anmeldung erforderlich.");
         from = Rules.required(from, "Von Lager"); to = Rules.required(to, "Nach Lager"); Rules.locations(from, to);
         ContentValues v = new ContentValues();
         v.put("timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.ROOT).format(new Date()));
         v.put("code", material.code); v.put("number", material.number); v.put("description", material.description);
-        v.put("type", material.type); v.put("unit", material.unit);
+        v.put("type", material.type); v.put("unit", material.unit);v.put("movement_kind",kind);
         v.put("from_location", from); v.put("to_location", to); v.put("quantity", Rules.quantity(quantity));
         v.put("person_code", person.code); v.put("person_name", person.name);
         return getWritableDatabase().insertOrThrow("movements", null, v);
@@ -153,15 +157,15 @@ public final class Store extends SQLiteOpenHelper {
     /** Writes only the snapshot selected before opening the system file picker. Does not archive. */
     public int writeCsv(Writer writer, long cutoff, boolean archived) throws IOException {
         writer.write('\uFEFF');
-        writer.write("ID;Zeitpunkt;Scancode;Mat Nummer;Beschreibung;Art;Einheit;Von Lager;Nach Lager;Menge;Personencode;Person;Archivbericht\r\n");
+        writer.write(String.join(";",ExcelExport.HEADERS)+"\r\n");
         int count = 0;
-        try (Cursor c = getReadableDatabase().rawQuery("SELECT id,timestamp,code,number,description,type,unit,from_location,to_location,quantity,person_code,person_name,archived_batch FROM movements WHERE id<=? AND archived_batch IS " + (archived ? "NOT NULL" : "NULL") + " ORDER BY id", new String[]{Long.toString(cutoff)})) {
+        try (Cursor c = getReadableDatabase().rawQuery("SELECT id,timestamp,code,number,description,type,unit,from_location,to_location,quantity,person_code,person_name,archived_batch,movement_kind FROM movements WHERE id<=? AND archived_batch IS " + (archived ? "NOT NULL" : "NULL") + " ORDER BY id", new String[]{Long.toString(cutoff)})) {
             while (c.moveToNext()) {
-                for (int i = 0; i < 13; i++) {
-                    if (i > 0) writer.write(';');
-                    String value = c.isNull(i) ? "" : c.getString(i);
-                    if (i == 9) value = value.replace('.', ','); // Decimal comma for German Excel.
-                    writer.write(Rules.csv(value));
+                String[] values=ExcelExport.values(c);
+                values[2]=values[2].replace('.', ',');
+                for(int i=0;i<values.length;i++) {
+                    if(i>0) writer.write(';');
+                    writer.write(Rules.csv(values[i]));
                 }
                 writer.write("\r\n"); count++;
             }

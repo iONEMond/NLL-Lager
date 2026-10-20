@@ -48,9 +48,9 @@ public class LocationsExportTest {
         try(OutputStream out=new FileOutputStream(output)) {assertEquals(1,store.writeXlsx(out,cutoff,false));}
         try(ZipFile zip=new ZipFile(output)) {
             String xml=new String(zip.getInputStream(zip.getEntry("xl/worksheets/sheet1.xml")).readAllBytes(),StandardCharsets.UTF_8);
-            assertTrue(xml.contains("<c r=\"J2\" s=\"2\"><v>1.125</v>"));
-            assertTrue(xml.contains("<c r=\"B2\" s=\"1\"><v>"));
-            assertTrue(xml.contains("00001"));assertTrue(xml.contains("=Text &lt;&amp;&gt; Ventil"));assertFalse(xml.contains("<f>"));assertFalse(xml.contains("r=\"A3\""));
+            assertTrue(xml.contains("<c r=\"C2\" s=\"2\"><v>1.125</v>"));
+            assertTrue(xml.contains("<c r=\"F2\" s=\"1\"><v>"));
+            assertTrue(xml.contains("00123"));assertTrue(xml.contains("=Text &lt;&amp;&gt; Ventil"));assertFalse(xml.contains("<f>"));assertFalse(xml.contains("r=\"A3\""));
         }
         assertEquals(2,store.count(false));store.archive(cutoff,"first-report");
         try(OutputStream out=new ByteArrayOutputStream()) {assertEquals(1,store.writeXlsx(out,store.archiveCutoff(),true));}
@@ -63,6 +63,29 @@ public class LocationsExportTest {
         List<String[]> material=new ArrayList<>();material.add(new String[]{"Lager","Einheit","Art","Beschreibung","Mat Nummer","Scancode"});material.add(new String[]{"Hauptlager","Stk","Material","Ventil","00001","00123"});
         @SuppressWarnings("unchecked") List<String[]> materials=(List<String[]>)map.invoke(null,material,false);
         assertArrayEquals(new String[]{"00123","00001","Ventil","Material","Stk","Hauptlager"},materials.get(0));
+    }
+    @Test public void requestedEightColumnsPreserveKindAndLeaveAccountingColumnEmpty() throws Exception {
+        store.addPerson("p","Anna");store.addMaterial("0001","different-number","Ventil","Material","Stk");
+        store.book(store.material("0001"),"A","B","2.5",store.person("p"),"Rückgabe");
+        File f=File.createTempFile("export-layout-",".xlsx",context.getCacheDir());
+        try(OutputStream out=new FileOutputStream(f)) {store.writeXlsx(out,store.cutoff(),false);}
+        try(ZipFile zip=new ZipFile(f)) {
+            javax.xml.parsers.DocumentBuilderFactory factory=javax.xml.parsers.DocumentBuilderFactory.newInstance();
+            org.w3c.dom.Document doc=factory.newDocumentBuilder().parse(zip.getInputStream(zip.getEntry("xl/worksheets/sheet1.xml")));
+            org.w3c.dom.NodeList rows=doc.getElementsByTagName("row");assertEquals(2,rows.getLength());
+            org.w3c.dom.NodeList headers=((org.w3c.dom.Element)rows.item(0)).getElementsByTagName("c");assertEquals(8,headers.getLength());
+            String[] expected={"Code","Beschreibung","Menge","Bewegungsart","Mitarbeiter","Datum","Lagerort (Von -> Nach)","Buchung erfolgt?"};
+            for(int j=0;j<8;j++) assertEquals(expected[j],headers.item(j).getTextContent());
+            org.w3c.dom.NodeList cells=((org.w3c.dom.Element)rows.item(1)).getElementsByTagName("c");
+            assertEquals(8,cells.getLength());assertEquals("0001",cells.item(0).getTextContent());assertEquals("2.5",cells.item(2).getTextContent());
+            assertEquals("Rückgabe",cells.item(3).getTextContent());assertEquals("Anna",cells.item(4).getTextContent());
+            assertEquals("A -> B",cells.item(6).getTextContent());assertEquals("",cells.item(7).getTextContent());
+            assertEquals("A1:H2",((org.w3c.dom.Element)doc.getElementsByTagName("autoFilter").item(0)).getAttribute("ref"));
+        } finally {f.delete();}
+        StringWriter csv=new StringWriter();store.writeCsv(csv,store.cutoff(),false);
+        assertTrue(csv.toString().contains("\"0001\";\"Ventil\";\"2,5\";\"Rückgabe\";\"Anna\""));
+        assertTrue(csv.toString().endsWith("\"A -> B\";\"\"\r\n"));
+        assertThrows(IllegalArgumentException.class,() -> store.book(store.material("0001"),"A","B","1",store.person("p"),"falsch"));
     }
     @Test public void failedExcelWriteDoesNotArchive() {
         store.addPerson("p","Person");store.addMaterial("m","M1","Material","Material","Stk");store.book(store.material("m"),"A","B","1",store.person("p"));

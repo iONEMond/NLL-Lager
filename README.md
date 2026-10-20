@@ -6,7 +6,7 @@ Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen sca
 
 **Release 0.6.0 – erster Gerätetest.** [Gmail-Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Excel-Mailversand und Material-Mailimport mit Firmensignatur im Emulator geprüft. Honeywell-Hardwaretest und echte Prüfung der neuen Export-/Neuanlageabläufe stehen noch aus.
 
-**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
+**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`, neues Ausgabeformat und Bewegungsart-Auswahl. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
 
 ## Download
 
@@ -53,7 +53,7 @@ Mailbefehle: **NLL Material**, **NLL Personen**, **NLL Export**. Kein Auftragssc
 
 Export, Import, Stammdatenverwaltung, Lageroptionen, Personen und Archiv sind ausschließlich in den passwortgeschützten Einstellungen verfügbar. Beim Export zwischen **Excel (.xlsx)**, **CSV** und **Per Mail senden & archivieren** wählen. Der Mailweg benötigt eine eingerichtete Gmail-Verbindung und archiviert nach bestätigtem Versand genau die Bewegungen des Berichts; Fehler oder unklarer Versand lassen sie offen. Nach erfolgreichem Schreiben und Schließen der Datei werden genau die exportierten offenen Bewegungen archiviert. Bei Abbruch oder Fehler bleiben sie offen. Archivierte Bewegungen können erneut exportiert werden.
 
-XLSX: Blatt Warenbewegungen mit Kopfzeile, Filter und fixierter erster Zeile. Mengen sind numerisch, Zeitpunkte Excel-Datumswerte, Codes und Lagernummern Text; UTC-Offset als zusätzliche Spalte. Genauere Formatierung folgt später.
+Ab 0.6.1-dev: XLSX-Blatt Warenbewegungen mit genau acht Spalten: **Code, Beschreibung, Menge, Bewegungsart, Mitarbeiter, Datum, Lagerort (Von -> Nach), Buchung erfolgt?**. Die letzte Spalte ist immer leer für Materialwirtschaft. Code ist der gespeicherte Scancode, Mitarbeiter der Name. Mengen sind numerisch, Datum enthält Datum/Uhrzeit als Excel-Datumswert, Lagerort verbindet Von und Nach mit „ -> “. Filter und fixierte Kopfzeile bleiben erhalten. CSV und Mailberichte verwenden dieselben Spalten. Neue Buchungen verlangen Entnahme/Rückgabe/Umlagerung; bei älteren Buchungen bleibt die Bewegungsart leer.
 
 CSV: UTF-8 mit BOM, Semikolon, Dezimalkomma, vollständig zitierte und gegen Excel-Formelausführung geschützte Textfelder. In Excel Codes als Text importieren.
 
@@ -71,6 +71,6 @@ export ANDROID_HOME=/pfad/zum/android-sdk
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 4 ergänzt den dauerhaften automatischen Mailabschluss; Migration von Version 1/2/3 erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
+APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 5 ergänzt die gespeicherte Bewegungsart; Migration von Version 1/2/3/4 erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
 
 Geräte-Instrumentierung (`:app:connectedDebugAndroidTest`) löscht App-Testdaten und darf nur auf einer separaten Testinstallation ausgeführt werden. Cloud-Setup bleibt unter `tools/setup-cloud.sh` und `tools/check-cloud.sh` verfügbar.

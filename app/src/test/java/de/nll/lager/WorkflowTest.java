@@ -43,8 +43,8 @@ public class WorkflowTest {
     private EditText field(String label) {
         EditText e=(EditText)find(activity.getWindow().getDecorView(),label,true); assertNotNull(label,e); return e;
     }
-    private void chooseFrom(String value) {chooseWarehouse("Von Lager",value);}
-    private void chooseTo(String value) {chooseWarehouse("Nach Lager",value);}
+    private void chooseFrom(String value) {chooseWarehouse("Von Lager",value);chooseWarehouse("Bewegungsart","Umlagerung");}
+    private void chooseTo(String value) {chooseWarehouse("Nach Lager",value);chooseWarehouse("Bewegungsart","Umlagerung");}
     private void chooseWarehouse(String label,String value) {
         android.widget.Spinner spinner=(android.widget.Spinner)find(activity.getWindow().getDecorView(),label,true); assertNotNull(spinner);
         for(int i=1;i<spinner.getCount();i++) if(value.equals(spinner.getItemAtPosition(i))) {spinner.setSelection(i); return;}
@@ -91,6 +91,15 @@ public class WorkflowTest {
         AlertDialog d=ShadowAlertDialog.getLatestAlertDialog();assertEquals(3,d.getListView().getAdapter().getCount());
         assertEquals("Per Mail senden & archivieren",d.getListView().getAdapter().getItem(2));
     }
+    @Test public void movementKindIsRequiredAndStoredWithBooking() {
+        signInAndSelect();chooseWarehouse("Von Lager","A");chooseWarehouse("Nach Lager","B");
+        press("Bewegung speichern");assertEquals(0,db.count(false));
+        AlertDialog missing=ShadowAlertDialog.getLatestAlertDialog();assertEquals("OK",missing.getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());missing.dismiss();
+        chooseWarehouse("Bewegungsart","Entnahme");press("Bewegung speichern");
+        ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+        try(android.database.Cursor c=db.getReadableDatabase().rawQuery("SELECT movement_kind FROM movements",null)) {assertTrue(c.moveToFirst());assertEquals("Entnahme",c.getString(0));}
+    }
     @Test public void updatedEmployeeWarehouseAppliesToNextArticleSelection() {
         scan("Personencode","0007");db.assignLocation("0007","NEU",true);press("Material");scan("Suchen oder Code scannen","00123");
         android.widget.Spinner target=(android.widget.Spinner)find(activity.getWindow().getDecorView(),"Nach Lager",true);
@@ -126,6 +135,7 @@ public class WorkflowTest {
         View article=find(activity.getWindow().getDecorView(),"R32, KM-32",true); assertNotNull(article); article.performClick();
         assertNotNull(field("Menge (kg)"));
         chooseFrom("Lager"); chooseTo("Fahrzeug"); field("Menge (kg)").setText("2,5");
+        chooseWarehouse("Bewegungsart","Umlagerung");
         press("Bewegung speichern"); ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
         org.robolectric.shadows.ShadowLooper.shadowMainLooper().idle();
         assertTrue(db.history(false).get(0).contains("2.5 kg"));
@@ -235,8 +245,8 @@ public class WorkflowTest {
             }
             if(!fail && !format.getBoolean(activity)) {
                 String csv=new String(java.nio.file.Files.readAllBytes(file.toPath()),java.nio.charset.StandardCharsets.UTF_8);
-                assertTrue(csv.contains("\"M-1\";\"Ventil\""));
-                assertTrue(csv.contains("\"0007\";\"Anna\""));
+                assertTrue(csv.contains("\"00123\";\"Ventil\""));
+                assertTrue(csv.contains("\"Anna\""));
                 assertTrue(csv.contains("\"2,5\""));
             }
         } finally {file.delete();}

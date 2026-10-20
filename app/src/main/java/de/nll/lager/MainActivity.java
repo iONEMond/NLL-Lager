@@ -36,14 +36,14 @@ public class MainActivity extends Activity {
     private Store.Material selected;
     private LinearLayout body;
     private EditText scan, amount;
-    private Spinner from, to;
+    private Spinner from, to, movementKind;
     private AdminSettings settings;
     private boolean adminUnlocked;
     private SharedPreferences prefs;
     private String screen = "login", notice = "", module = "Material", searchQuery = "";
     private long exportCutoff;
     private boolean exportArchive, pickerOpen, writing, importPeople, exportExcel;
-    private String draftFrom = "", draftTo = "", draftAmount = "1", draftScan = "";
+    private String draftKind = "", draftFrom = "", draftTo = "", draftAmount = "1", draftScan = "";
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
             exportCutoff = state.getLong("cutoff"); exportArchive = state.getBoolean("archive"); exportExcel=state.getBoolean("exportExcel");
             pickerOpen = state.getBoolean("picker"); importPeople = state.getBoolean("importPeople");
             draftFrom = state.getString("from", draftFrom); draftTo = state.getString("to", draftTo);
+            draftKind=state.getString("kind", "");
             draftAmount = state.getString("amount", "1"); draftScan = state.getString("scan", "");
         }
         render();
@@ -72,12 +73,14 @@ public class MainActivity extends Activity {
         state.putBoolean("importPeople", importPeople);
         state.putBoolean("exportExcel",exportExcel); state.putBoolean("archive", exportArchive); state.putBoolean("picker", pickerOpen);
         state.putString("from", draftFrom); state.putString("to", draftTo);
+        state.putString("kind",draftKind);
         state.putString("amount", draftAmount); state.putString("scan", draftScan);
         super.onSaveInstanceState(state);
     }
     private void captureDraft() {
         if ("book".equals(screen) && from != null) {
             draftFrom = from.getSelectedItemPosition()>0 ? from.getSelectedItem().toString() : ""; draftTo = spinnerValue(to);
+            draftKind=spinnerValue(movementKind);
             draftAmount = amount.getText().toString(); draftScan = scan.getText().toString();
         }
     }
@@ -88,7 +91,7 @@ public class MainActivity extends Activity {
         return d;
     }
     private void base(String title, String subtitle) {
-        from = null; to = null; amount = null; scan = null;
+        from = null; to = null; movementKind=null; amount = null; scan = null;
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setFitsSystemWindows(true);
         body = new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(16), dp(16), dp(16), dp(24));
         scroll.setBackgroundColor(Color.rgb(245,245,245));
@@ -465,7 +468,7 @@ public class MainActivity extends Activity {
         person=store.person(person.code);
         article=store.material(article.code);
         if(person==null || article==null) {screen=person==null ? "login" : "browse";render();return;}
-        selected=article; draftScan=article.code; draftFrom=article.location; draftTo=person.location; draftAmount="1"; notice=""; screen="book"; render();
+        selected=article; draftScan=article.code; draftFrom=article.location; draftTo=person.location; draftAmount="1"; draftKind=""; notice=""; screen="book"; render();
     }
     private void booking() {
         screen="book";
@@ -481,6 +484,7 @@ public class MainActivity extends Activity {
         }
         from=warehouseDropdown(body,"Von Lager",sourceOptions(),draftFrom);
         to=warehouseDropdown(body,"Nach Lager",destinationOptions(),draftTo);
+        movementKind=warehouseDropdown(body,"Bewegungsart",java.util.Arrays.asList("Entnahme","Rückgabe","Umlagerung"),draftKind);
         if(sourceOptions().isEmpty()) text("Noch keine Lager eingerichtet. Bitte über das Schloss ein Lager hinterlegen.",16,MUTED);
         if(person.location.isEmpty()) text("Für diese Person fehlt die Lagernummer. Bitte in den Einstellungen nachpflegen.",16,MUTED);
         amount=field("Menge" + (selected==null ? "" : " ("+selected.unit+")"),"",InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -509,15 +513,15 @@ public class MainActivity extends Activity {
             if (selected==null) throw new IllegalArgumentException("Bitte zuerst einen bekannten Materialcode übernehmen.");
             if (!scan.getText().toString().trim().equals(selected.code)) throw new IllegalArgumentException("Der Code wurde geändert. Bitte zuerst „Code übernehmen“ drücken.");
             captureDraft();
-            final String f=Rules.required(draftFrom,"Von Lager"), t=Rules.required(draftTo,"Nach Lager"), q=Rules.quantity(draftAmount);
+            final String f=Rules.required(draftFrom,"Von Lager"), t=Rules.required(draftTo,"Nach Lager"), q=Rules.quantity(draftAmount), kind=Rules.required(draftKind,"Bewegungsart");
             if(!sourceOptions().contains(f)) throw new IllegalArgumentException("Bitte ein eingerichtetes Lager auswählen.");
             if(!destinationOptions().contains(t)) throw new IllegalArgumentException("Bitte ein eingerichtetes Ziellager auswählen.");
             Rules.locations(f,t); hideKeyboard();
             new AlertDialog.Builder(this).setTitle("Bewegung bestätigen")
-                .setMessage(selected.number+" · "+selected.description+"\n\n"+q+" "+selected.unit+"\n"+f+" → "+t+"\nPerson: "+person.name)
+                .setMessage(selected.number+" · "+selected.description+"\n\n"+q+" "+selected.unit+"\n"+f+" → "+t+"\nBewegungsart: "+kind+"\nPerson: "+person.name)
                 .setNegativeButton("Zurück",null).setPositiveButton("Jetzt speichern",(d,w) -> {
                     try {
-                        store.book(selected,f,t,q,person);
+                        store.book(selected,f,t,q,person,kind);
                         prefs.edit().putString("from",f).apply();
                         notice="✓ Bewegung gespeichert: "+q+" "+selected.unit;
                         selected=null; draftScan=""; draftAmount="1"; screen="browse"; render();
@@ -552,7 +556,7 @@ public class MainActivity extends Activity {
     private String spinnerValue(Spinner spinner) {return spinner!=null && spinner.getSelectedItemPosition()>0 ? spinner.getSelectedItem().toString() : "";}
     private Spinner warehouseDropdown(LinearLayout layout,String label,List<String> values,String initial) {
         TextView title=new TextView(this); title.setText(label); title.setTextSize(16); title.setTextColor(INK); title.setTypeface(null,Typeface.BOLD); layout.addView(title);
-        List<String> options=new java.util.ArrayList<>(); options.add("Lager auswählen …"); options.addAll(values);
+        List<String> options=new java.util.ArrayList<>(); options.add("Bewegungsart".equals(label) ? "Bewegungsart auswählen …" : "Lager auswählen …"); options.addAll(values);
         Spinner spinner=new Spinner(this,Spinner.MODE_DROPDOWN); spinner.setContentDescription(label); spinner.setMinimumHeight(dp(58));
         ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,options); spinner.setAdapter(adapter);
         spinner.setSelection(Math.max(0,options.indexOf(initial))); layout.addView(spinner,new LinearLayout.LayoutParams(-1,dp(58))); return spinner;
@@ -619,7 +623,7 @@ public class MainActivity extends Activity {
                 if(!requireAdmin()) return;
                 String c=Rules.required(code.getText().toString(),"Scancode");
                 store.addMaterial(c,number.getText().toString(),description.getText().toString(),refrigerant.isChecked() ? "Kältemittel" : "Material",unit.getText().toString(),Rules.required(spinnerValue(warehouse),"Lager"));
-                if(useAfter) {selected=store.material(c); module=selected.type; draftScan=c; draftFrom=selected.location; draftTo=person.location; draftAmount="1";screen="book";}
+                if(useAfter) {selected=store.material(c); module=selected.type; draftScan=c; draftFrom=selected.location; draftTo=person.location; draftAmount="1";draftKind="";screen="book";}
                 if(relock) adminUnlocked=false;
                 d.dismiss(); notice="✓ Material angelegt"; render();
             } catch(SQLiteConstraintException e) {code.setError("Dieser Scancode existiert bereits.");}

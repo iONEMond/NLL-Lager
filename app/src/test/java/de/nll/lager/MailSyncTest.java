@@ -135,7 +135,7 @@ public class MailSyncTest {
         assertTrue(client.fetched.isEmpty());assertTrue(store.people().isEmpty());assertTrue(mail.records(config.gmail).get(0)[2].contains("abgelehnt"));
     }
     @Test public void versionTwoDatabaseMigratesWithoutLosingMovements() {
-        movement("1");store.getWritableDatabase().execSQL("DROP TABLE mail_commands");store.getWritableDatabase().setVersion(2);store.close();
+        movement("1");store.getWritableDatabase().execSQL("DROP TABLE mail_commands");removeMovementKind();store.getWritableDatabase().setVersion(2);store.close();
         store=new Store(context);mail=new MailStore(store);assertEquals(1,store.count(false));assertEquals("A",store.material("001").location);
         mail.queue("migration-test","file",0,"test");assertTrue(mail.exists("migration-test"));
     }
@@ -171,8 +171,18 @@ public class MailSyncTest {
     @Test public void versionThreeMigrationPreservesPendingCommandsAndMovements() {
         movement("1");SQLiteDatabase db=store.getWritableDatabase();db.execSQL("DROP TABLE mail_commands");
         db.execSQL("CREATE TABLE mail_commands (id TEXT PRIMARY KEY,state TEXT NOT NULL,reply TEXT NOT NULL,cutoff INTEGER NOT NULL DEFAULT 0,result TEXT NOT NULL,created INTEGER NOT NULL)");
-        mail.queue("old","file",1,"old export");db.setVersion(3);store.close();store=new Store(context);mail=new MailStore(store);
+        mail.queue("old","file",1,"old export");removeMovementKind();db.setVersion(3);store.close();store=new Store(context);mail=new MailStore(store);
         assertEquals(1,store.count(false));assertTrue(mail.exists("old"));mail.finishAutomaticArchives();assertEquals(1,store.count(false));
+    }
+    void removeMovementKind() {
+        SQLiteDatabase db=store.getWritableDatabase();
+        db.execSQL("CREATE TABLE old_movements AS SELECT id,timestamp,code,number,description,type,unit,from_location,to_location,quantity,person_code,person_name,archived_batch FROM movements");
+        db.execSQL("DROP TABLE movements");db.execSQL("ALTER TABLE old_movements RENAME TO movements");
+    }
+    @Test public void versionFourMigrationLeavesHistoricalKindEmptyAndPreservesArchive() throws Exception {
+        movement("1");store.archive(store.cutoff(),"old-report");removeMovementKind();store.getWritableDatabase().setVersion(4);store.close();
+        store=new Store(context);assertEquals(1,store.count(true));assertEquals(0,store.count(false));
+        try(Cursor c=store.getReadableDatabase().rawQuery("SELECT movement_kind FROM movements",null)) {assertTrue(c.moveToFirst());assertEquals("",c.getString(0));}
     }
     @Test public void receiverCannotInjectMailHeaders() {
         assertThrows(IllegalArgumentException.class,() -> MailProtocol.mime("a@example.com\r\nBcc: attacker@example.com","id","text",null));
