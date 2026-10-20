@@ -10,13 +10,13 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | **0.6.0 · Build 8** | Vorheriger Release; ergänzt Gmail |
 | **0.6.1 · Build 10** | Vorheriger Release |
 | **0.7.0 · Build 13** | Wird wegen Mailproblemen zurückgezogen; nicht installieren |
-| 0.7.1 · Build 15 | Signiert und geprüft; Veröffentlichung vorbereitet |
+| **0.7.1 · Build 15** | **Neuester veröffentlichter Release** |
 
-[Release 0.7.0](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.0) ergänzt vollständige Stammdatenbearbeitung, nachvollziehbare Stornos, Doppelscan-Warnung, detaillierte Importvorschau, optionale Importspalten, vierstellige PIN, Fortschrittsanzeigen und Sicherungsstatus. 124 lokale Tests, Release-Build und Lint erfolgreich; öffentlicher Download und Signatur geprüft. Hardwaretest der neuen Abläufe steht aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
+[Release 0.7.1](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.1) ergänzt Abbruch und Zeitlimit für Mailvorgänge, aktuelle Hintergrundanzeige und Excel über die Android-Mail-App teilen. 140 lokale Tests, Release-Build und Lint erfolgreich; öffentlicher Download und Signatur geprüft. Geräte-/Mailtest der Korrektur steht aus. 0.7.0 wegen gemeldeter Mailprobleme nicht weiter installieren. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 
 ## Installation
 
-**[Signierte APK 0.7.0 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.7.0/NLL-Lager-0.7.0-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.0) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
+**[Signierte APK 0.7.1 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.7.1/NLL-Lager-0.7.1-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.1) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
 
 Die Haupt-App verwendet `de.nll.lager`. Ein Update von der signierten 0.5.0 erhält die App-Daten; die App dazu nicht deinstallieren. Die Vorschau verwendet `de.nll.lager.preview` mit eigenen Daten. Alte Installationen mit einem anderen Signierschlüssel lassen sich nicht direkt aktualisieren.
 

@@ -1,8 +1,8 @@
 # Versionshistorie
 
-Neueste veröffentlichte APK: **0.7.0**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
+Neueste veröffentlichte APK: **0.7.1**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
-## 0.7.1 – Release vorbereitet, noch nicht veröffentlicht
+## 0.7.1 – veröffentlicht am 20.10.2026
 
 20.10.2026: Release-Kandidat 0.7.1, Code 15 (nach Entwicklungsstand 14). Betreiber meldet funktionierenden Versand mit 0.6.1 und dauerhaft „Hintergrundverarbeitung läuft“ unter 0.7.0. Nachgewiesen: Anzeige wurde nach Hintergrundabschluss nicht aktualisiert; Hintergrundläufe hatten kein Gesamtzeitlimit. Ein tatsächlich hängender Geräteaufruf ist ohne Gerätediagnose noch nicht nachgewiesen.
 
@@ -12,7 +12,7 @@ Neueste veröffentlichte APK: **0.7.0**. Geplante Funktionen sind ausdrücklich 
 - Zusätzlich „Excel über Mail-App teilen“: XLSX mit Empfänger/Betreff über Android ACTION_SEND, eng begrenzter ContentProvider und temporäre Lesefreigabe. Installierte Mail-App im privaten Profil erforderlich; keine Gmail-API-Freigabe für diese Option nötig. Kein automatischer Import über die Teilen-Funktion.
 - Übergabe an die Mail-App archiviert nichts. Persistenter Berichtabschluss unter „Bericht exportieren“: erneut teilen, später entscheiden, offen lassen oder Versand ausdrücklich bestätigen und nur die enthaltenen Bewegungen archivieren. IDs und Inhaltsprüfsummen verhindern Archivierung abweichend wiederhergestellter Daten. Spätere Buchungen bleiben offen. Temporäre Berichte nach Abschluss mindestens sieben Tage verfügbar; Bereinigung beim nächsten neuen Bericht.
 
-Prüfung: 140 lokale Tests ohne Fehler, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Signierte 0.7.1 (Code 15) mit bestehendem Zertifikat geprüft. Veröffentlichung vorbereitet; 0.7.0 soll auf Betreiberwunsch wegen Mailproblemen zurückgezogen werden. Geräteprüfung und echter Versand mit dieser Änderung stehen aus.
+Prüfung: 140 lokale Tests ohne Fehler, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Signierte 0.7.1 (Code 15) mit bestehendem Zertifikat geprüft und als stabiler Release veröffentlicht. Anonymer Download, Prüfsumme, GitHub-Digest und Signatur geprüft; 0.7.0 soll auf Betreiberwunsch wegen Mailproblemen zurückgezogen werden. Geräteprüfung und echter Versand mit dieser Änderung stehen aus.
 
 ## 0.7.0 – veröffentlicht am 20.10.2026
 
