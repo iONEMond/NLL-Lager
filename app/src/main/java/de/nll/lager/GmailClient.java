@@ -9,12 +9,16 @@ import java.util.Base64;
 /** HTTPS Gmail REST client. Tokens never occur in URLs, exceptions or logs. */
 class GmailClient {
     private final String token;
-    GmailClient(String token) {this.token=token;}
+    private final WorkProgress progress;
+    GmailClient(String token) {this(token,WorkProgress.NONE);}
+    GmailClient(String token,WorkProgress progress) {this.token=token;this.progress=progress;}
     JSONObject call(String path,JSONObject payload) throws Exception {
+        progress.checkCancelled();
         HttpURLConnection c=(HttpURLConnection)new URL("https://gmail.googleapis.com/gmail/v1/users/me/"+path).openConnection();
         c.setConnectTimeout(20000);c.setReadTimeout(30000);c.setInstanceFollowRedirects(false);
         c.setRequestProperty("Authorization","Bearer "+token);
         try {
+            progress.onCancel(c::disconnect);
             if(payload!=null) {
                 c.setRequestMethod("POST");c.setDoOutput(true);c.setRequestProperty("Content-Type","application/json; charset=UTF-8");
                 try(OutputStream out=c.getOutputStream()) {out.write(payload.toString().getBytes(StandardCharsets.UTF_8));}

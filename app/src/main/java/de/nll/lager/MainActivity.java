@@ -446,7 +446,7 @@ public class MainActivity extends Activity {
         text("Letzte Aufträge",20,INK);
         for(String[] record:new MailStore(store).records(config.gmail)) {
             String state=record[1];
-            String label="sent".equals(state) ? "Versendet" : "archived".equals(state) ? "Abgeschlossen" : "uncertain".equals(state) ? "Versand unklar" : "Wartet auf Versand";
+            String label="sent".equals(state) ? "Versendet" : "archived".equals(state) ? "Abgeschlossen" : "uncertain".equals(state) ? "Versand unklar" : "cancelled".equals(state) ? "Abgebrochen" : "Wartet auf Versand";
             text(label+" · "+record[2],15,INK);
             if("sent".equals(state) && Long.parseLong(record[3])>0) button("Übernahme bestätigen & archivieren",false,() -> {
                 if(!requireAdmin() || mailBusy()) return;
@@ -511,8 +511,8 @@ public class MainActivity extends Activity {
     private void syncMail() {
         if(!requireAdmin() || mailBusy()) return;
         final android.content.Context app=getApplicationContext();
-        writing=true;OperationProgress progress=operation("Synchronisierung läuft …","Google-Verbindung herstellen …");
-        new Thread(() -> {MailSync.run(app,progress);runOnUiThread(() -> {writing=false;if(!isDestroyed()) {progress.dismiss();render();}});},"mail-manual").start();
+        writing=true;OperationProgress progress=operation("Synchronisierung läuft …","Google-Verbindung herstellen …");progress.timeoutAfter(120000);
+        new Thread(() -> {MailSync.run(app,progress);if(progress.timedOut)MailConfig.status(app,"Zeitlimit von 2 Minuten erreicht. Mailstatus prüfen; bei unklarem Versand keine automatische Wiederholung.");runOnUiThread(() -> {writing=false;progress.dismiss();if(!isDestroyed()) {render();}});},"mail-manual").start();
     }
     private void localMailExport(MailConfig config) { localMailExport(config,false); }
     private void localMailExport(MailConfig config,boolean archiveAfterSend) {
@@ -522,18 +522,27 @@ public class MainActivity extends Activity {
             .setNegativeButton("Abbrechen",null).setPositiveButton("Senden",(d,w) -> {
                 if(!requireAdmin() || mailBusy()) return;
                 final android.content.Context app=getApplicationContext();
-                writing=true;OperationProgress progress=operation("Bericht per Mail senden …","Bericht vorbereiten …");
+                writing=true;OperationProgress progress=operation("Bericht per Mail senden …","Bericht vorbereiten …");progress.timeoutAfter(120000);
+                final String localId="local-"+UUID.randomUUID();
                 new Thread(() -> {
                     if(!MailSync.BUSY.compareAndSet(false,true)) {runOnUiThread(() -> {writing=false;if(!isDestroyed()){progress.dismiss();error("Synchronisierung läuft bereits.");}});return;}
                     try(Store local=new Store(app)) {
                         org.json.JSONObject payload=new org.json.JSONObject().put("headers",new org.json.JSONArray()
                             .put(new org.json.JSONObject().put("name","From").put("value",config.recipient))
                             .put(new org.json.JSONObject().put("name","Subject").put("value","NLL Export")));
-                        String id="local-"+UUID.randomUUID();
+                        String id=localId;
                         MailSync.prepare(app,config,local,null,new org.json.JSONObject().put("id",id).put("internalDate",System.currentTimeMillis()).put("payload",payload),archiveAfterSend,progress);
+                        if(!progress.control.isCancelled())MailSync.runOwned(app,progress);
                     } catch(Exception e) {MailConfig.status(app,"Export konnte nicht vorbereitet werden.");}
-                    finally {MailSync.BUSY.set(false);}
-                    MailSync.run(app,progress);runOnUiThread(() -> {writing=false;if(!isDestroyed()) {progress.dismiss();render();}});
+                    finally {
+                        try {if(progress.control.isCancelled()) {
+                            try(Store local=new Store(app)) {new MailStore(local).cancelPending(config.gmail+":"+localId);}
+                            MailConfig.status(app,(progress.timedOut ? "Zeitlimit von 2 Minuten erreicht. " : "Abgebrochen. ")+"Mailstatus prüfen: Bereits übertragene Mails können nicht zurückgerufen werden.");
+                        }
+                        } catch(Exception failure){MailConfig.status(app,"Abbruchstatus konnte nicht gespeichert werden. Vor erneutem Versand Mail-Ausgang prüfen.");}
+                        finally {MailSync.BUSY.set(false);Backup.request(app);}
+                    }
+                    Thread.interrupted();runOnUiThread(() -> {writing=false;progress.dismiss();if(!isDestroyed()) {render();}});
                 },"mail-export").start();
             }).show();
     }
@@ -890,9 +899,34 @@ public class MainActivity extends Activity {
     }
     private void beginExport(boolean archived) {
         if(!requireAdmin()) return;
+        if(!archived && !SharedReport.pending(this).isEmpty()){sharedReportStatus();return;}
         if(store.count(archived)==0) {error("Keine Bewegungen für diesen Bericht vorhanden."); return;}
         new AlertDialog.Builder(this).setTitle("Exportformat wählen")
-            .setItems(archived ? new String[]{"Excel-Tabelle (.xlsx)","CSV (.csv)"} : new String[]{"Excel-Tabelle (.xlsx)","CSV (.csv)","Per Mail senden & archivieren"},(d,which) -> {if(which==2) localMailExport(new MailConfig(this),true);else exportFile(archived,which==0);}).setNegativeButton("Abbrechen",null).show();
+            .setItems(archived ? new String[]{"Excel-Tabelle (.xlsx)","CSV (.csv)","Excel über Mail-App teilen"} : new String[]{"Excel-Tabelle (.xlsx)","CSV (.csv)","Excel über Mail-App teilen","Direkt per Gmail senden & archivieren"},(d,which) -> {if(which==2) shareReport(archived);else if(which==3)localMailExport(new MailConfig(this),true);else exportFile(archived,which==0);}).setNegativeButton("Abbrechen",null).show();
+    }
+    private void shareReport(boolean archived) {
+        if(!requireAdmin() || mailBusy())return;
+        if(!MailSync.BUSY.compareAndSet(false,true)){error("Verarbeitung läuft bereits.");return;}
+        writing=true;OperationProgress progress=operation("Excel zum Teilen erstellen …","Bericht vorbereiten …");
+        new Thread(() -> {
+            String name=null,failure=null;
+            try{name=SharedReport.create(getApplicationContext(),store,archived,progress);}catch(Exception e){failure=e.getMessage();}finally{MailSync.BUSY.set(false);}
+            final String file=name,message=failure;
+            runOnUiThread(() -> {writing=false;if(isDestroyed()||isFinishing())return;progress.dismiss();if(file==null){error(message);return;}openSharedReport(file);});
+        },"share-report").start();
+    }
+    private void openSharedReport(String name) {
+        if(!requireAdmin())return;
+        try{startActivity(Intent.createChooser(SharedReport.intent(this,name,new MailConfig(this).recipient),"Excel-Bericht teilen"));notice="An Mail-App übergeben · Versand dort bestätigen. Archivierung anschließend unter Bericht exportieren.";}
+        catch(android.content.ActivityNotFoundException e){error("Keine geeignete App installiert. Bitte eine Mail-App im privaten Profil einrichten oder Excel als Datei speichern.");}
+    }
+    private void sharedReportStatus() {
+        if(!requireAdmin())return;
+        new AlertDialog.Builder(this).setTitle("Geteilter Bericht noch offen")
+            .setMessage("Die Übergabe an eine andere App bestätigt keinen Versand. Nach Versand und Prüfung kannst du genau die enthaltenen Bewegungen archivieren. Spätere Buchungen bleiben offen.")
+            .setPositiveButton("Versand bestätigt · archivieren",(d,w) -> {if(!requireAdmin()||mailBusy())return;if(!MailSync.BUSY.compareAndSet(false,true))return;try{int n=SharedReport.archive(this,store);SharedReport.clear(this);notice=n+" Bewegungen nach deiner Bestätigung archiviert";render();}catch(Exception e){error(e.getMessage());}finally{MailSync.BUSY.set(false);}})
+            .setNeutralButton("Erneut teilen",(d,w) -> {try{openSharedReport(new org.json.JSONObject(SharedReport.pending(this)).getString("file"));}catch(Exception e){error("Bericht fehlt oder ist ungültig.");}})
+            .setNegativeButton("Weitere Optionen",(d,w) -> new AlertDialog.Builder(this).setTitle("Bewegungen offen lassen?").setMessage("Berichtabschluss verwerfen? Es wird nichts archiviert; die bereits übergebene Mail wird nicht zurückgerufen. Ein späterer Bericht kann dieselben Bewegungen enthalten.").setNegativeButton("Zurück",(x,y)->{}).setNeutralButton("Später entscheiden",(x,y)->{}).setPositiveButton("Offen lassen",(x,y)->{if(requireAdmin()){SharedReport.clear(this);notice="Bewegungen bleiben offen";render();}}).show()).show();
     }
     private void exportFile(boolean archived,boolean excel) {
         if(!requireAdmin()) return;
@@ -951,12 +985,17 @@ public class MainActivity extends Activity {
                         rows=store.writeCsv(writer,cutoff,archive,progress);
                     }
                 }
+                progress.checkCancelled();
                 if(!archive) {
                     progress.update(0,0,"Datei gespeichert · Bewegungen archivieren …");
+                    progress.completeCancellation();
                     try {store.archive(cutoff,UUID.randomUUID().toString());}
                     catch(Exception e) {throw new ArchiveException();}
                 }
+                progress.completeCancellation();
                 message="✓ "+rows+" Bewegungen exportiert"+(archive ? "" : " und archiviert");
+            } catch(OperationControl.Cancelled e) {
+                message="Export abgebrochen · nichts archiviert. Eine unvollständige Datei am Speicherziel ggf. löschen.";
             } catch(ArchiveException e) {
                 message="Bericht gespeichert, Archivierung fehlgeschlagen. Bewegungen bleiben offen; erneuter Export kann Duplikate erzeugen.";
             } catch(Exception e) {
@@ -985,11 +1024,12 @@ public class MainActivity extends Activity {
                 try(java.io.InputStream in=getContentResolver().openInputStream(uri); java.io.FileOutputStream out=new java.io.FileOutputStream(temporary)) {
                     if(in==null) throw new IOException("Datei nicht lesbar.");
                     byte[] buffer=new byte[8192]; int n; long total=0;
-                    while((n=in.read(buffer))!=-1) {total+=n; if(total>20*1024*1024) throw new IOException("Maximale Dateigröße: 20 MB."); out.write(buffer,0,n);}
+                    while((n=in.read(buffer))!=-1) {progress.checkCancelled();total+=n; if(total>20*1024*1024) throw new IOException("Maximale Dateigröße: 20 MB."); out.write(buffer,0,n);}
                 }
                 List<String[]> rows=ExcelImport.read(temporary,people,progress);
                 progress.update(0,0,"Vorhandene Codes prüfen …");
                 ImportPreview preview=ImportPreview.read(store,rows,people,progress);
+                progress.completeCancellation();
                 int conflicts=preview.changed+preview.unchanged;
                 runOnUiThread(() -> {
                     writing=false;if(isFinishing() || isDestroyed()) return;progress.dismiss();
@@ -1022,7 +1062,7 @@ public class MainActivity extends Activity {
         writing=true;OperationProgress progress=operation("Importvorschau","Gelieferte Felder vergleichen …");
         new Thread(() -> {
             ImportPreview preview=null;String failure="";
-            try{preview=ImportPreview.read(store,rows,people,progress);}catch(Exception e){failure=e.getMessage();}
+            try{preview=ImportPreview.read(store,rows,people,progress);progress.completeCancellation();}catch(Exception e){failure=e.getMessage();}
             final ImportPreview result=preview;final String errorMessage=failure;
             runOnUiThread(() -> {writing=false;if(isDestroyed() || isFinishing())return;progress.dismiss();if(!requireAdmin())return;if(result==null)error(errorMessage);else importPreviewPage(result,0);});
         },"import-preview").start();
@@ -1068,7 +1108,7 @@ public class MainActivity extends Activity {
     }
     private static class ArchiveException extends Exception { private static final long serialVersionUID=1L; }
     @Override protected void onDestroy() {
-        if(operationProgress!=null) operationProgress.dismiss();
+        if(operationProgress!=null) operationProgress.detach();
         if (store != null && !writing) store.close();
         super.onDestroy();
     }

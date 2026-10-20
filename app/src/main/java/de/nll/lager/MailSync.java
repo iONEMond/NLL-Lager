@@ -16,21 +16,25 @@ final class MailSync {
     static final AtomicBoolean BUSY=new AtomicBoolean();
     static boolean run(Context context) {return run(context,WorkProgress.NONE);}
     static boolean run(Context context,WorkProgress progress) {
-        progress.update(0,0,"Google-Verbindung herstellen …");
         if(!BUSY.compareAndSet(false,true)) return false;
+        try{return runOwned(context,progress);}finally{BUSY.set(false);Backup.request(context);}
+    }
+    /** Caller holds BUSY throughout preparation, cancellation and transmission. */
+    static boolean runOwned(Context context,WorkProgress progress) {
         MailConfig config=new MailConfig(context);
         try(Store store=new Store(context)) {
+            progress.update(0,0,"Google-Verbindung herstellen …");
             if(!config.ready()) return false;
             MailStore mail=new MailStore(store);mail.recoverInterrupted();
             AuthorizationResult auth=Tasks.await(Identity.getAuthorizationClient(context).authorize(config.request()),45,TimeUnit.SECONDS);
             if(auth.hasResolution() || auth.getAccessToken()==null || !auth.getGrantedScopes().containsAll(Arrays.asList(MailConfig.READ,MailConfig.SEND))) throw new IOException("Gmail-Freigabe erforderlich. Im geschützten Mail-Menü erneut verbinden.");
-            GmailClient client=new GmailClient(auth.getAccessToken());
+            GmailClient client=new GmailClient(auth.getAccessToken(),progress);
             if(!config.gmail.equalsIgnoreCase(client.call("profile",null).getString("emailAddress"))) throw new IOException("Falsches Google-Konto ausgewählt.");
             sync(context,config,store,client,progress);
             MailConfig.status(context,"Synchronisierung abgeschlossen. Auftragsstatus unten prüfen.");return true;
         } catch(Exception e) {
-            MailConfig.status(context,e instanceof IOException ? e.getMessage() : "Gmail-Verbindung fehlgeschlagen. Internet, Google-Einrichtung und Kontofreigabe prüfen.");return false;
-        } finally {BUSY.set(false);Backup.request(context);}
+            MailConfig.status(context,e instanceof OperationControl.Cancelled || Thread.currentThread().isInterrupted() ? "Synchronisierung abgebrochen. Bereits abgeschlossene Aufträge bleiben erhalten; Mailstatus prüfen." : e instanceof IOException ? e.getMessage() : "Gmail-Verbindung fehlgeschlagen. Internet, Google-Einrichtung und Kontofreigabe prüfen.");return false;
+        } finally {Thread.interrupted();}
     }
     static void sync(Context context,MailConfig config,Store store,GmailClient client) throws Exception {sync(context,config,store,client,WorkProgress.NONE);}
     static void sync(Context context,MailConfig config,Store store,GmailClient client,WorkProgress progress) throws Exception {
@@ -78,6 +82,7 @@ final class MailSync {
                 try {
                     try(OutputStream out=new FileOutputStream(temp)) {out.write(client.attachment(id,parts.get(0)));}
                     try {rows=ExcelImport.read(temp,command.endsWith("PERSONEN"),progress);}
+                    catch(OperationControl.Cancelled e) {throw e;}
                     catch(Exception e) {throw new IOException("Excel-Datei ungültig: "+e.getMessage());}
                 } finally {if(!temp.delete()) temp.deleteOnExit();}
             }
@@ -101,9 +106,10 @@ final class MailSync {
                 }
                 mail.queue(key,saveReply(context,key,MailProtocol.mime(config.recipient,key,result,attachment)),cutoff,result);
                 if(autoArchive) mail.archiveAfterSend(key);
-                db.setTransactionSuccessful();
+                progress.checkCancelled();db.setTransactionSuccessful();
             } finally {db.endTransaction();}
         } catch(IOException | IllegalArgumentException e) {
+            progress.checkCancelled();
             // A failed transaction leaves the catalog intact and creates a durable error reply.
             if(!mail.exists(key)) {
                 String reason=e.getMessage();if(reason==null) reason="Datei konnte nicht verarbeitet werden.";
@@ -136,7 +142,7 @@ final class MailSync {
             File file=replyFile(context,r[1]);
             String mime;try(InputStream in=new FileInputStream(file)) {mime=new String(GmailClient.read(in,20*1024*1024),java.nio.charset.StandardCharsets.UTF_8);}
             if(!mime.startsWith("To: "+config.recipient+"\r\n")) continue;
-            mail.state(r[0],"sending");
+            progress.checkCancelled();mail.state(r[0],"sending");
             try {client.send(mime);mail.state(r[0],"sent");}
             catch(Exception e) {mail.state(r[0],"uncertain");throw new IOException("Versandstatus unklar. Im Mail-Menü prüfen; keine automatische Wiederholung und keine Archivierung.");}
             mail.finishAutomaticArchives();progress.update(++sent,replies.size(),"Berichte und Antworten senden …");

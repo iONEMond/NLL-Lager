@@ -233,7 +233,7 @@ public final class Store extends SQLiteOpenHelper {
                 }
                 result=new int[]{added,0,skipped};
             }
-            db.setTransactionSuccessful();Backup.request(app);return result;
+            progress.completeCancellation();db.setTransactionSuccessful();Backup.request(app);return result;
         } finally {db.endTransaction();}
     }
     public long cutoff() {

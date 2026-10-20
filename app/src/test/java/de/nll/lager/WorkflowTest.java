@@ -151,12 +151,13 @@ public class WorkflowTest {
         assertEquals("kg",((EditText)find(d.getWindow().getDecorView(),"Einheit (z. B. Stk oder kg)",true)).getText().toString());
         d.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();assertFalse(isUnlocked());assertNull(db.material("KMNEW"));
     }
-    @Test public void exportChooserOffersMailOnlyForOpenReport() throws Exception {
+    @Test public void exportChooserOffersSharingAndDirectMailForOpenReport() throws Exception {
         db.book(db.material("00123"),"A","B","1",db.person("0007"));
         unlockForTest();java.lang.reflect.Method export=MainActivity.class.getDeclaredMethod("beginExport",boolean.class);export.setAccessible(true);export.invoke(activity,false);
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
-        AlertDialog d=ShadowAlertDialog.getLatestAlertDialog();assertEquals(3,d.getListView().getAdapter().getCount());
-        assertEquals("Per Mail senden & archivieren",d.getListView().getAdapter().getItem(2));
+        AlertDialog d=ShadowAlertDialog.getLatestAlertDialog();assertEquals(4,d.getListView().getAdapter().getCount());
+        assertEquals("Excel über Mail-App teilen",d.getListView().getAdapter().getItem(2));
+        assertEquals("Direkt per Gmail senden & archivieren",d.getListView().getAdapter().getItem(3));
     }
     @Test public void movementKindIsRequiredAndStoredWithBooking() {
         signInAndSelect();chooseWarehouse("Von Lager","A");chooseWarehouse("Nach Lager","B");

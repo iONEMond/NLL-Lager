@@ -4,4 +4,7 @@ package de.nll.lager;
 interface WorkProgress {
     WorkProgress NONE=(done,total,message) -> {};
     void update(int done,int total,String message);
+    default void checkCancelled() {}
+    default void completeCancellation() {}
+    default void onCancel(Runnable action) {}
 }

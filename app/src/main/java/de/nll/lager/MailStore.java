@@ -26,6 +26,10 @@ final class MailStore {
         }
         for(String id:ids) confirm(id);
     }
+    void cancelPending(String id) {
+        ContentValues v=new ContentValues();v.put("state","cancelled");
+        store.getWritableDatabase().update("mail_commands",v,"id=? AND state='pending'",new String[]{id});
+    }
     void state(String id,String state) {
         ContentValues v=new ContentValues();v.put("state",state);
         store.getWritableDatabase().update("mail_commands",v,"id=?",new String[]{id});

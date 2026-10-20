@@ -80,6 +80,7 @@ public final class ExcelImport {
         return col-1;
     }
     private static int next(XmlPullParser p) throws Exception {
+        if(Thread.currentThread().isInterrupted())throw new OperationControl.Cancelled();
         int event=p.nextToken();
         if(event==XmlPullParser.DOCDECL) throw new IOException("XML-Dokumenttypen sind nicht erlaubt.");
         return event;

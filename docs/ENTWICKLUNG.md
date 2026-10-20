@@ -40,7 +40,7 @@ Der Release-Build aus der Kommandozeile ist ohne Signierkonfiguration **unsignie
 
 ## Release-Ablauf
 
-1. Tatsächlichen GitHub-Release- und Branchstand lesen. Installierten Entwicklungsständen Rechnung tragen: aktuell ist 0.7.0-dev mit versionCode 12 vorbereitet; Entwicklungsstand 0.6.2-dev mit Code 11 existierte bereits. Für den späteren stabilen Release einen höheren Code wählen.
+1. Tatsächlichen GitHub-Release- und Branchstand lesen. Installierten Entwicklungsständen Rechnung tragen: aktuell ist 0.7.0 mit Code 13 veröffentlicht; 0.7.1-dev mit Code 14 ist der unveröffentlichte Entwicklungsstand. Für den späteren stabilen Release einen höheren Code wählen.
 2. Version in `app/build.gradle`, README, CHANGELOG und Prüfprotokoll konsistent halten. Solange keine signierte APK veröffentlicht ist, ausdrücklich „vorbereitet/nicht veröffentlicht“ schreiben.
 3. Tests, Release-Build und Release-Lint ausführen; Metadaten prüfen. Geräteprüfungen nur nach tatsächlicher Durchführung bestätigen.
 4. Über Android Studio **Generate Signed App Bundle or APK → APK** mit dem bestehenden Release-Schlüssel signieren. Der Betreiber trägt nötige Passwörter im lokalen Dialog ein. Nicht im Chat erfragen und nicht speichern lassen, sofern nicht ausdrücklich beauftragt.

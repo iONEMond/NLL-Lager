@@ -78,3 +78,11 @@ Unter **Schloss → Sicherung & Wiederherstellung** einmal einen lokalen Dokumen
 
 **Schloss → App aktualisieren → Nach Updates suchen** prüft den neuesten stabilen GitHub-Release ohne Anmeldung. Nach Download werden Prüfsumme, APK-Signatur, Paketname und höhere Versionsnummer geprüft. **Sichern & Update installieren** erstellt zuerst eine vollständige Sicherung und öffnet danach die Android-Installationsbestätigung. Ein eingerichteter Sicherungsordner ist Pflicht. Die Vorschau-App installiert keine Updates der Haupt-App. [Details und Releaseanforderungen](UPDATES.md). Einmalig muss eine Version mit dieser Funktion wie bisher installiert werden; die veröffentlichte 0.6.0 enthält den Updater noch nicht.
 
+
+## Ab 0.7.1: Abbrechen und über Mail-App teilen (unveröffentlicht)
+
+Laufende Importe, Exporte und manuelle Mailvorgänge bieten Abbrechen. Bitte den bestätigten Abschluss abwarten; beim endgültigen Speichern wird die Schaltfläche gesperrt. Importänderungen werden bei rechtzeitigem Abbruch vollständig zurückgerollt. Ein abgebrochener Dateiexport archiviert nichts; eine unvollständige Datei ggf. am Speicherziel löschen. Bereits abgeschlossene Mailaufträge oder übertragene Mails lassen sich nicht zurückrufen. Manuelle Mailvorgänge enden nach spätestens zwei Minuten mit einer Abbruchanforderung; Netzwerk-/Dateisystemtreiber können bis zur Rückkehr ihres laufenden Aufrufs benötigen.
+
+Unter Bericht exportieren → Excel über Mail-App teilen eine eingerichtete Mail-App im privaten Profil wählen und dort selbst senden. Empfänger und Betreff sind vorbelegt, XLSX ist angehängt. Gmail-API-Einrichtung unserer App ist hierfür nicht erforderlich. Automatische Mailimporte benötigen weiterhin die Gmail-Anbindung. Teilen bestätigt keinen Versand und archiviert nichts.
+
+Danach unter Bericht exportieren den offenen Bericht abschließen: Versand bestätigt · archivieren übernimmt nur die enthaltenen Bewegungen. Erneut teilen verwendet dieselbe Datei. Über Weitere Optionen kann man später entscheiden oder Bewegungen offen lassen. Auch nach Neustart bleibt die Entscheidung offen. Vor einem Ersatzversand bei unklarem Gmail-Direktversand erst Firmenpostfach und Gesendet prüfen, um doppelte Übernahme zu vermeiden.

@@ -146,6 +146,23 @@ public class MailSyncTest {
         MailConfig updated=new MailConfig(context);
         assertTrue(updated.ready());assertEquals(since,updated.since);
     }
+    @Test public void cancelledPendingReportIsNotSentByNextBackgroundSync()throws Exception {
+        movement("1");FakeClient client=new FakeClient();MailSync.prepare(context,config,store,client,message("cancel-pending",config.recipient,subject("EXPORT")),true);
+        mail.cancelPending(config.gmail+":cancel-pending");MailSync.sync(context,config,store,client);assertTrue(client.sent.isEmpty());assertEquals("cancelled",mail.records(config.gmail).get(0)[1]);assertEquals(1,store.count(false));
+        mail.state(config.gmail+":cancel-pending","sent");mail.cancelPending(config.gmail+":cancel-pending");assertEquals("sent",mail.records(config.gmail).get(0)[1]);
+    }
+    @Test public void abortDuringSendLeavesUncertainAndNeverAutomaticallyRetries()throws Exception {
+        movement("1");MailSync.prepare(context,config,store,new FakeClient(),message("cancel-send",config.recipient,subject("EXPORT")),true);
+        OperationControl token=new OperationControl();FakeClient interrupted=new FakeClient(){@Override void send(String mime)throws Exception{token.cancel();throw new IOException("cancelled during transfer");}};
+        try{assertThrows(IOException.class,()->MailSync.sync(context,config,store,interrupted,token));}finally{Thread.interrupted();}
+        assertEquals("uncertain",mail.records(config.gmail).get(0)[1]);assertEquals(1,store.count(false));
+        FakeClient retry=new FakeClient();MailSync.sync(context,config,store,retry);assertTrue(retry.sent.isEmpty());assertEquals(1,store.count(false));
+    }
+    @Test public void abortBeforeQueueDoesNotCreateErrorReply()throws Exception {
+        movement("1");OperationControl token=new OperationControl();token.cancel();
+        assertThrows(OperationControl.Cancelled.class,()->MailSync.prepare(context,config,store,new FakeClient(),message("cancel-prep",config.recipient,subject("EXPORT")),true,token));
+        assertTrue(mail.records(config.gmail).isEmpty());assertEquals(1,store.count(false));
+    }
     @Test public void automaticMailExportArchivesOnlySnapshotAfterConfirmedSend() throws Exception {
         movement("1");FakeClient client=new FakeClient();
         MailSync.prepare(context,config,store,client,message("auto",config.recipient,subject("EXPORT")),true);

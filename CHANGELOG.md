@@ -2,6 +2,17 @@
 
 Neueste veröffentlichte APK: **0.7.0**. Geplante Funktionen sind ausdrücklich als unveröffentlicht markiert. Die Vorschauen 0.2.0 bis 0.4.0 wurden lokal getestet; ihr Funktionsstand wurde mit 0.4.1 auf GitHub übernommen.
 
+## 0.7.1 – unveröffentlicht
+
+20.10.2026: Entwicklungsstand 0.7.1-dev, Code 14. Betreiber meldet dauerhaft offenen Fortschrittsdialog beim Mailversand auf dem Scanner; konkrete Ursache dort noch nicht nachgewiesen.
+
+- Fortschrittsdialoge für Import, Export und manuelle Synchronisation mit echtem kooperativem Abbruch. Laufender lokaler Import wird transaktional zurückgerollt; vor endgültiger Übernahme/Archivierung wird die Abbruchphase atomar abgeschlossen. Dateiexport bei Abbruch ohne Archivierung; unvollständige Zieldatei ggf. manuell entfernen.
+- Manuelle Mailvorgänge mit Gesamtzeitlimit von zwei Minuten. Abbruch unterbricht den wartenden Worker und trennt aktive Gmail-HTTP-Verbindungen. Bereits bestätigte Sendungen/abgeschlossene Aufträge bleiben erhalten. Bei unterbrochener Übertragung bleibt der Status unklar, ohne automatischen Wiederholungsversand. Ein noch nicht versandter, lokal neu erstellter Auftrag wird bei Abbruch deaktiviert, während die Verarbeitungssperre gehalten wird.
+- Zusätzlich „Excel über Mail-App teilen“: XLSX mit Empfänger/Betreff über Android ACTION_SEND, eng begrenzter ContentProvider und temporäre Lesefreigabe. Installierte Mail-App im privaten Profil erforderlich; keine Gmail-API-Freigabe für diese Option nötig. Kein automatischer Import über die Teilen-Funktion.
+- Übergabe an die Mail-App archiviert nichts. Persistenter Berichtabschluss unter „Bericht exportieren“: erneut teilen, später entscheiden, offen lassen oder Versand ausdrücklich bestätigen und nur die enthaltenen Bewegungen archivieren. IDs und Inhaltsprüfsummen verhindern Archivierung abweichend wiederhergestellter Daten. Spätere Buchungen bleiben offen. Temporäre Berichte nach Abschluss mindestens sieben Tage verfügbar; Bereinigung beim nächsten neuen Bericht.
+
+Prüfung: 136 lokale Tests ohne Fehler, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Keine neue signierte APK oder Veröffentlichung. Neuester Release bleibt 0.7.0. Geräteprüfung und echter Versand mit dieser Änderung stehen aus.
+
 ## 0.7.0 – veröffentlicht am 20.10.2026
 
 20.10.2026: Release-Kandidat 0.7.0, versionCode 13 (höher als Entwicklungsstand 12). Beinhaltet alle bislang unveröffentlichten Änderungen aus 0.6.2-dev sowie die folgenden Erweiterungen. Als stabiler Release [v0.7.0](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.0) veröffentlicht.

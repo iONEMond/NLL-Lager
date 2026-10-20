@@ -18,6 +18,7 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.6.1, Code 10 | Vorheriger Release, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
 | 0.6.2-dev, Code 11 | Unveröffentlichter Zwischenstand, jetzt in 0.7.0 übernommen. |
 | 0.7.0-dev, Code 12 | Früherer lokaler Entwicklungsstand. |
+| 0.7.1-dev, Code 14 | Unveröffentlichte Weiterentwicklung: Abbruch und zusätzliche Android-Teilen-Option. |
 | 0.7.0, Code 13 | Neuester stabiler Release v0.7.0; signiert, veröffentlicht und öffentlicher Download geprüft. |
 
 Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
@@ -163,3 +164,15 @@ Zwei Emulatoren waren vorhanden: „Medium Phone API 37.0“ mit älteren Instal
 7. Weiterhin keine automatische Bestandsberechnung und kein Zugriff auf das Intune-Arbeitsprofil. Kein Lizenztext wurde vom Betreiber festgelegt; öffentliche Sichtbarkeit nicht als zusätzliche Lizenzzusage auslegen.
 
 Neue Entscheidungen, Prüfungen und Releasezustände in den zuständigen Dokumenten und dieser Übergabe nachführen. Historische Prüfprotokolle nicht nachträglich zu erfolgreichen Hardwaretests umschreiben.
+
+## Weiterentwicklung 0.7.1-dev: Abbruch und externer Mailversand
+
+Betreiber meldet in 0.7.0 dauerhaft offenen Fortschrittsdialog beim Direktversand auf dem Scanner. Ursache auf Hardware noch offen; nicht als behobenen Google-/Kontofehler ausgeben. Zusätzliches Teilen ausdrücklich gewünscht, bestehende Gmail-Funktionen bleiben erhalten.
+
+OperationControl mit kooperativem Cancellation-Token, Worker-Interrupt, HTTP-disconnect-Callback und atomarer nicht mehr abbrechbarer Commit-Grenze. OperationProgress bietet Abbrechen; manuelle Mailvorgänge zusätzlich 120 Sekunden Gesamtzeitlimit. UI bleibt bis Workerabschluss gesperrt. Lokaler Import rollt vollständig zurück, Multi-Auftrag-Sync behält bereits abgeschlossene Aufträge. Ausgehende Übertragungsabbrüche konservativ uncertain, keine Wiederholung/Archivierung. Lokaler pending-Export bei Abbruch cancelled; BUSY durchgehend über Vorbereitung, Versand und Abbruchbereinigung halten. MailSync.runOwned nur bei gehaltener BUSY-Sperre verwenden.
+
+SharedReport schreibt unveränderliche XLSX nach files/shared-reports, ReportFileProvider gibt nur passende Einzelnamen lesend frei. ACTION_SEND mit ClipData/EXTRA_STREAM, MIME und FLAG_GRANT_READ_URI_PERMISSION; keine Zugangsdaten oder Versandbestätigung der Mail-App. pending in separaten SharedPreferences shared-report persistiert Datei, DB-Identität, einzelne Bewegungs-IDs und SHA-256 der historischen Felder (Archivstatus ausgenommen). Erst ausdrückliche Bestätigung unter Bericht exportieren archiviert diese IDs nach vollständiger Inhaltsprüfung in einer Transaktion. Ein späterer Restore mit abweichenden IDs/Inhalten verhindert Archivierung. Spätere Buchungen bleiben offen. Vorhandene Mail-Ausgangszustände werden nicht in den externen Bericht übernommen; vor manuellem Ersatzversand unklare frühere Sendungen im Postfach prüfen.
+
+Derzeit keine neue signierte Release-APK, kein weiterer Geräte-/Mailtest. Öffentlicher Release weiterhin v0.7.0.
+
+Prüfstand 0.7.1-dev: 136 lokale Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich. Vorschau-APK lokal NLL-Lager-0.7.1-dev-vorschau.apk im übergeordneten Projektordner; eigene Vorschau-Daten, kein Update der Haupt-App.
