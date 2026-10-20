@@ -110,8 +110,41 @@ public final class ExcelImport {
     private static String normalized(String s) {
         return s.toLowerCase(Locale.ROOT).replace(" ","").replace("_","").replace("-","").replace(".","");
     }
+    private static List<String[]> mapCompanyMaterials(List<String[]> rows) throws IOException {
+        String[] header=rows.get(0);int title=-1,code=-1,location=-1;
+        for(int i=0;i<header.length;i++) {
+            String h=normalized(header[i]);
+            if(h.equals("title")) {if(title>=0) throw new IOException("Doppelte Spaltenüberschrift: Title");title=i;}
+            if(h.equals("code")) {if(code>=0) throw new IOException("Doppelte Spaltenüberschrift: Code");code=i;}
+            if(h.equals("lager") || h.equals("lagerort")) {if(location>=0) throw new IOException("Doppelte Lager-Spalte.");location=i;}
+        }
+        List<String[]> result=new ArrayList<>();Set<String> codes=new HashSet<>();
+        for(int i=1;i<rows.size();i++) {
+            String[] row=rows.get(i);
+            try {
+                String c=Rules.required(row[code],"Code"),description=Rules.required(row[title],"Title");
+                if(!codes.add(c)) throw new IllegalArgumentException("Doppelter Code in Datei: "+c);
+                String[] mapped=location<0 ? new String[]{c,c,description,"Material","Stk"} : new String[]{c,c,description,"Material","Stk",row[location].trim()};
+                if(location>=0 && !mapped[5].isEmpty()) mapped[5]=Rules.required(mapped[5],"Lager");
+                result.add(mapped);
+            } catch(IllegalArgumentException ex) {throw new IOException("Datensatz "+i+": "+ex.getMessage());}
+        }
+        if(result.isEmpty()) throw new IOException("Keine Datensätze vorhanden.");
+        return result;
+    }
     private static List<String[]> map(List<String[]> rows,boolean people) throws IOException {
         if(rows.isEmpty()) throw new IOException("Die Tabelle ist leer.");
+        // Company catalogue: Title + Code, with unrelated category/ordering columns.
+        // Keep the established template strict; detect the company layout explicitly.
+        if(!people) {
+            boolean title=false,code=false,standard=false;
+            for(String cell:rows.get(0)) {
+                String h=normalized(cell);
+                title|=h.equals("title");code|=h.equals("code");
+                standard|=h.equals("scancode") || h.equals("barcode") || h.equals("beschreibung") || h.equals("matnummer") || h.equals("materialnummer") || h.equals("matnr");
+            }
+            if(title && code && !standard) return mapCompanyMaterials(rows);
+        }
         String[] names=people ? new String[]{"personencode","name"} : new String[]{"scancode","matnummer","beschreibung","art","einheit"};
         int[] columns=new int[names.length]; Arrays.fill(columns,-1);
         String[] header=rows.get(0);

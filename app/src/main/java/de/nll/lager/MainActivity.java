@@ -531,7 +531,7 @@ public class MainActivity extends Activity {
         base(people ? "Personen" : "Material & Kältemittel", "Stammdaten und Lagerzuordnung verwalten");
         button(people ? "+ Person anlegen" : "+ Material anlegen",true,() -> { if(people) addPerson(); else addMaterial("",false); });
         button("Aus Excel importieren (.xlsx)",false,() -> beginImport(people));
-        text(people ? "Excel-Spalten: Personencode, Name, Lagernummer (optional)" : "Excel-Spalten: Scancode, Mat Nummer, Beschreibung, Art, Einheit, Lager (optional)",15,MUTED);
+        text(people ? "Excel-Spalten: Personencode, Name, Lagernummer (optional)" : "Excel: Firmenliste mit Title und Code (Material / Stk) oder Vorlage mit Scancode, Mat Nummer, Beschreibung, Art, Einheit. Lager ist optional.",15,MUTED);
         text("Erste Tabelle, erste Zeile = Überschriften. Codes als Text speichern, damit führende Nullen erhalten bleiben. Vorhandene Codes werden nicht überschrieben.",15,MUTED);
         if(people) {
             for(Store.Person entry:store.people()) button(entry.name+" · Lager: "+(entry.location.isEmpty() ? "nicht zugeordnet" : entry.location),false,() -> editAssignment(entry.code,true));

@@ -130,6 +130,26 @@ public class StoreTest {
         File duplicate=xlsx(head+row+row,shared);
         try {assertThrows(IOException.class,() -> ExcelImport.read(duplicate,true));} finally {duplicate.delete();}
     }
+    @Test public void companyCatalogueImportsNumericCodeAndIgnoresOrderingColumns() throws Exception {
+        String head="<row>"+inline("A1","Title")+inline("B1","Code")+inline("C1","Typ")+inline("D1","Bemerkung")+inline("E1","BST Menge")+"</row>";
+        File f=xlsx(head+"<row>"+inline("A2","REGLER DIXELL XR70CX (LIDL)")+"<c r='B2'><v>10129000</v></c>"+inline("C2","Regler")+inline("D2","Hinweis")+"<c r='E2'><v>10</v></c></row>",null);
+        try {
+            List<String[]> rows=ExcelImport.read(f,false);
+            assertArrayEquals(new String[]{"10129000","10129000","REGLER DIXELL XR70CX (LIDL)","Material","Stk"},rows.get(0));
+            store.importRows(rows,false);assertEquals("10129000",store.material("10129000").number);assertEquals(0,store.count(false));
+        } finally {f.delete();}
+    }
+    @Test public void companyCatalogueAllowsReorderedColumnsTextCodesAndOptionalWarehouse() throws Exception {
+        File f=xlsx("<row>"+inline("A1","Code")+inline("B1","Lager")+inline("D1","Title")+"</row><row>"+inline("A2","000140002")+inline("B2","Hauptlager")+inline("D2","Ventilatormotor")+"</row>",null);
+        try {assertArrayEquals(new String[]{"000140002","000140002","Ventilatormotor","Material","Stk","Hauptlager"},ExcelImport.read(f,false).get(0));} finally {f.delete();}
+    }
+    @Test public void companyCatalogueRejectsDuplicateCodesMissingValuesAndAmbiguousHeaders() throws Exception {
+        String head="<row>"+inline("A1","Title")+inline("B1","Code")+"</row>";
+        String row="<row>"+inline("A2","Ventil")+inline("B2","001")+"</row>";
+        for(String xml:new String[]{head+row+row,head+"<row>"+inline("A2","Ventil")+"</row>","<row>"+inline("A1","Title")+inline("B1","Code")+inline("C1","Code")+"</row>"+row}) {
+            File f=xlsx(xml,null);try {assertThrows(IOException.class,() -> ExcelImport.read(f,false));} finally {f.delete();}
+        }
+    }
     @Test public void rejectsFormulasAndMissingHeaders() throws Exception {
         File formula=xlsx("<row>"+inline("A1","Personencode")+inline("B1","Name")+"</row><row><c r='A2'><f>1+1</f><v>2</v></c>"+inline("B2","Anna")+"</row>",null);
         try {assertThrows(IOException.class,() -> ExcelImport.read(formula,true));} finally {formula.delete();}

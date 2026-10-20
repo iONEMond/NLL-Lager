@@ -6,6 +6,8 @@ Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen sca
 
 **Release 0.6.0 – erster Gerätetest.** [Gmail-Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Excel-Mailversand und Material-Mailimport mit Firmensignatur im Emulator geprüft. Honeywell-Hardwaretest und echte Prüfung der neuen Export-/Neuanlageabläufe stehen noch aus.
 
+**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
+
 ## Download
 
 **[NLL Lager 0.6.0 – signierte APK](https://github.com/iONEMond/NLL-Lager/releases/download/v0.6.0/NLL-Lager-0.6.0-release.apk)** – auf GitHub „Download raw file“ wählen. [SHA-256-Prüfsummen](downloads/SHA256SUMS).
@@ -35,7 +37,9 @@ Unbekannte Artikelcodes können im Material-/KM-Bereich nach Scannen und Bestät
 
 [Materialvorlage](vorlagen/Material-Import.xlsx) und [Personenvorlage](vorlagen/Personen-Import.xlsx) enthalten **Beispieldaten**, die vor produktivem Import ersetzt werden müssen.
 
-Materialspalten: `Scancode`, `Mat Nummer`, `Beschreibung`, `Art`, `Einheit`; zusätzlich optional `Lager`. Art ist Material oder Kältemittel. Personenspalten: `Personencode`, `Name`; zusätzlich optional `Lagernummer`.
+Ab 0.6.1-dev zusätzlich Firmenformat: **Title, Code, Typ, Bemerkung, BST Menge**. Nur Title und Code werden benötigt: Code → Scancode und Materialnummer, Title → Beschreibung, Art → Material, Einheit → Stk. Typ, Bemerkung und Bestellmenge bleiben unberücksichtigt. Eine optionale Lager-Spalte ist möglich. Keine Übernahme einer Bestellmenge als Bestand oder Bewegung. Gilt für lokalen und Mailimport.
+
+Materialspalten der bisherigen Vorlage: `Scancode`, `Mat Nummer`, `Beschreibung`, `Art`, `Einheit`; zusätzlich optional `Lager`. Art ist Material oder Kältemittel. Personenspalten: `Personencode`, `Name`; zusätzlich optional `Lagernummer`.
 
 Die vorhandenen Vorlagen ohne Lager-Spalte bleiben kompatibel. Fehlende Zuordnungen anschließend im geschützten Menü pflegen. Vorhandene Codes werden nicht überschrieben; doppelte Codes brechen den gesamten Import ab. Die Datenbankübernahme erfolgt als Transaktion.
 

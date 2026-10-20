@@ -1,3 +1,7 @@
+# Importergänzung 0.6.1-dev – 20.10.2026
+
+Firmenlayout aus dem Foto mit Title, Code, Typ, Bemerkung und BST Menge nachgebildet. Drei zusätzliche XLSX-Tests prüfen numerische Codes, führende Nullen als Text, umgeordnete Spalten, optionale Lagerzuordnung, keine Buchungen durch Bestellmengen sowie Ablehnung doppelter Codes, fehlender Pflichtwerte und doppelter Überschriften. 67 Tests, Debug-Build und Lint erfolgreich. Originaldatei noch nicht geprüft; bisher nur Foto vorhanden. Noch kein signierter Build oder Release dieser Ergänzung.
+
 # Releaseprüfung 0.6.0
 
 19.10.2026: Release für den ersten Gerätetest. Version 0.6.0, versionCode 8, Paket `de.nll.lager`. 64 lokale Tests, Debug-Build und Release-Lint erfolgreich. Release-APK über Android Studio mit dem vorhandenen Schlüssel signiert; Paket/Version mit aapt und Signatur mit apksigner geprüft. Zertifikat unverändert gegenüber 0.5.0. APK und SHA-256-Prüfsumme im Projektordner; Veröffentlichung als GitHub-Release v0.6.0. Honeywell-Hardwaretest noch offen. Die folgenden Aufzeichnungen beschreiben die Prüfungen der Entwicklungsstände, deren Code in diesem Release enthalten ist.
