@@ -14,7 +14,8 @@ import javax.crypto.spec.PBEKeySpec;
 /** Device-local settings. Unlock state is deliberately never persisted. */
 public final class AdminSettings {
     private final SharedPreferences prefs;
-    public AdminSettings(Context context) { prefs=context.getSharedPreferences("admin-settings",Context.MODE_PRIVATE); }
+    private final Context app;
+    public AdminSettings(Context context) { app=context.getApplicationContext();prefs=context.getSharedPreferences("admin-settings",Context.MODE_PRIVATE); }
     public boolean hasPassword() { return prefs.contains("passwordHash"); }
     public void setPassword(char[] password) {
         if(password.length<8) throw new IllegalArgumentException("Mindestens 8 Zeichen verwenden.");
@@ -39,7 +40,9 @@ public final class AdminSettings {
     }
     public List<String> locations() {
         List<String> result=new ArrayList<>();
-        try {JSONArray data=new JSONArray(prefs.getString("locations","[]")); for(int i=0;i<data.length();i++) result.add(data.getString(i));}
+        try {String source=prefs.getString("locations","[]");
+            try(Store store=new Store(app);android.database.Cursor c=store.getReadableDatabase().rawQuery("SELECT value FROM app_settings WHERE key='locations'",null)) {if(c.moveToFirst()) source=c.getString(0);}
+            JSONArray data=new JSONArray(source); for(int i=0;i<data.length();i++) result.add(data.getString(i));}
         catch(org.json.JSONException e) {throw new IllegalStateException("Lagerliste konnte nicht gelesen werden.",e);}
         return result;
     }
@@ -50,6 +53,7 @@ public final class AdminSettings {
             for(String other:checked) if(other.equalsIgnoreCase(name)) throw new IllegalArgumentException("Dieses Lager existiert bereits.");
             checked.add(name);
         }
-        if(!prefs.edit().putString("locations",new JSONArray(checked).toString()).commit()) throw new IllegalStateException("Lagerliste konnte nicht gespeichert werden.");
+        try(Store store=new Store(app)) {android.content.ContentValues v=new android.content.ContentValues();v.put("key","locations");v.put("value",new JSONArray(checked).toString());store.getWritableDatabase().insertWithOnConflict("app_settings",null,v,android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE);}
+        Backup.request(app);
     }
 }

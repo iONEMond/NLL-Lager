@@ -100,6 +100,13 @@ public class WorkflowTest {
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
         try(android.database.Cursor c=db.getReadableDatabase().rawQuery("SELECT movement_kind FROM movements",null)) {assertTrue(c.moveToFirst());assertEquals("Entnahme",c.getString(0));}
     }
+    @Test public void backupMenuAndDocumentResultsRequireAdminAndCancelDoesNotChangeData() throws Exception {
+        invoke("backupMenu",new Class<?>[]{});assertNull(find(activity.getWindow().getDecorView(),"Jetzt sichern",false));
+        activity.onActivityResult(104,android.app.Activity.RESULT_OK,new android.content.Intent().setData(android.net.Uri.parse("content://unknown/tree/root")));
+        assertEquals("",Backup.prefs(activity).getString("tree",""));
+        unlockForTest();invoke("backupMenu",new Class<?>[]{});assertNotNull(find(activity.getWindow().getDecorView(),"Sicherung wiederherstellen",false));
+        activity.onActivityResult(105,android.app.Activity.RESULT_CANCELED,null);assertNotNull(db.material("00123"));assertNotNull(db.person("0007"));
+    }
     @Test public void updatedEmployeeWarehouseAppliesToNextArticleSelection() {
         scan("Personencode","0007");db.assignLocation("0007","NEU",true);press("Material");scan("Suchen oder Code scannen","00123");
         android.widget.Spinner target=(android.widget.Spinner)find(activity.getWindow().getDecorView(),"Nach Lager",true);

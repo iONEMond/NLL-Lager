@@ -29,7 +29,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public class MainActivity extends Activity {
-    private static final int EXPORT = 101, IMPORT = 102, MAIL_AUTH = 103;
+    private static final int EXPORT = 101, IMPORT = 102, MAIL_AUTH = 103, BACKUP_FOLDER=104, BACKUP_RESTORE=105;
     private static final int INK = Color.rgb(50,49,48), BLUE = Color.rgb(0,120,212), MUTED = Color.rgb(96,94,92);
     private Store store;
     private Store.Person person;
@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
             draftAmount = state.getString("amount", "1"); draftScan = state.getString("scan", "");
         }
         render();
-        MailJobService.schedule(this);
+        MailJobService.schedule(this);Backup.request(this);
         if(new MailConfig(this).ready() && new MailConfig(this).automatic) new Thread(() -> MailSync.run(getApplicationContext()),"mail-start").start();
     }
     @Override protected void onSaveInstanceState(Bundle state) {
@@ -165,6 +165,7 @@ public class MainActivity extends Activity {
         switch (screen) {
             case "settings": settingsMenu(); break;
             case "mail": mailMenu(); break;
+            case "backup": backupMenu(); break;
             case "locations": locationMenu(); break;
             case "home": home(); break;
             case "browse": browse(); break;
@@ -193,7 +194,7 @@ public class MainActivity extends Activity {
         } catch (IllegalArgumentException e) { error(e.getMessage()); }
     }
     private boolean isAdminScreen() {
-        return java.util.Arrays.asList("settings","locations","materials","people","history","archive","mail").contains(screen);
+        return java.util.Arrays.asList("settings","locations","materials","people","history","archive","mail","backup").contains(screen);
     }
     private boolean requireAdmin() {
         if(adminUnlocked) return true;
@@ -240,8 +241,62 @@ public class MainActivity extends Activity {
         button("Bericht exportieren",false,() -> beginExport(false));
         button("Bewegungen & Archiv",false,() -> {screen="history"; render();});
         button("Mail & Synchronisierung",false,() -> {screen="mail";render();});
+        button("Sicherung & Wiederherstellung",false,() -> {screen="backup";render();});
         button("Passwort ändern",false,() -> passwordDialog(true));
         button("Einstellungen sperren",false,this::lockSettings);
+    }
+    private void backupMenu() {
+        if(!requireAdmin()) return;
+        screen="backup";base("Sicherung & Wiederherstellung","Vollständige Geschäftsdaten · unabhängig von der Installation");
+        String tree=Backup.prefs(this).getString("tree","");
+        text(tree.isEmpty() ? "Noch kein Sicherungsordner ausgewählt." : "Sicherungsordner: "+Uri.decode(tree),15,MUTED);
+        text(Backup.prefs(this).getString("status","Noch keine Sicherung erstellt."),17,INK);
+        long last=Backup.prefs(this).getLong("last",0);
+        if(last>0) text("Letzte erfolgreiche Sicherung: "+new SimpleDateFormat("dd.MM.yyyy HH:mm:ss",Locale.GERMANY).format(new Date(last)),15,MUTED);
+        text("Einmal einen Ordner im Gerätespeicher wählen, z. B. Dokumente/NLL-Lager. Die letzten sieben geprüften Sicherungen bleiben erhalten. Enthalten: Material, Personen, Lager, offene Bewegungen und Archiv. Die Dateien sind lesbar und enthalten keine Passwörter oder Google-Zugriffsdaten.",16,MUTED);
+        button("Sicherungsordner auswählen",true,() -> {
+            if(!requireAdmin()) return;
+            Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION|Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+            try {pickerOpen=true;startActivityForResult(intent,BACKUP_FOLDER);} catch(Exception e) {pickerOpen=false;error("Ordnerauswahl nicht verfügbar.");}
+        });
+        if(!tree.isEmpty()) button("Jetzt sichern",true,() -> backupWork(null));
+        button("Sicherung wiederherstellen",false,() -> {
+            if(!requireAdmin()) return;
+            Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);
+            try {pickerOpen=true;startActivityForResult(intent,BACKUP_RESTORE);} catch(Exception e) {pickerOpen=false;error("Dateiauswahl nicht verfügbar.");}
+        });
+        text("Automatische Sicherungen folgen Änderungen, sobald Android die Hintergrundarbeit zulässt. Bei Fehlern bleiben ältere Stände erhalten. Nach Neuinstallation den Ordner erneut auswählen und eine Sicherung öffnen. Vor Wiederherstellung wird der aktuelle Stand zusätzlich gesichert; Gmail muss danach erneut verbunden werden. Ein Geräteverlust erfordert eine Kopie der Sicherungen außerhalb des Geräts.",16,MUTED);
+    }
+    private void backupWork(BackupData selected) {
+        if(!requireAdmin()) return;
+        writing=true;
+        final android.content.Context app=getApplicationContext();
+        AlertDialog progress=new AlertDialog.Builder(this).setTitle(selected==null ? "Sicherung wird erstellt …" : "Daten werden wiederhergestellt …").setMessage("Bitte warten.").setCancelable(false).create();progress.show();
+        new Thread(() -> {
+            String result;
+            try {if(selected==null) {Backup.save(app,true);result="✓ Sicherung erstellt und geprüft";} else {Backup.restore(app,selected);result="✓ Wiederhergestellt · Gmail bitte erneut verbinden";}}
+            catch(Exception e) {result="Sicherung/Wiederherstellung fehlgeschlagen: "+e.getMessage();Backup.status(app,result);}
+            final String message=result;
+            runOnUiThread(() -> {writing=false;if(isDestroyed()) return;progress.dismiss();
+                if(selected!=null) {person=null;this.selected=null;adminUnlocked=false;screen="login";}notice=message;render();});
+        },"backup-manual").start();
+    }
+    private void inspectBackup(Uri uri) {
+        if(!requireAdmin()) return;
+        writing=true;
+        new Thread(() -> {
+            BackupData data=null;String failure="";
+            try(java.io.InputStream in=getContentResolver().openInputStream(uri)) {data=BackupData.read(in);}
+            catch(Exception e) {failure="Ungültige Sicherung: "+e.getMessage();}
+            final BackupData backup=data;final String problem=failure;
+            runOnUiThread(() -> {
+                writing=false;if(isDestroyed() || !adminUnlocked) return;
+                if(backup==null) {error(problem);return;}
+                try {new AlertDialog.Builder(this).setTitle("Aktuelle Daten ersetzen?").setMessage(backup.summary()+"\n\nDie Sicherung ersetzt alle aktuellen Geschäftsdaten, einschließlich Archiv. Zuerst wird eine Sicherheitskopie im gewählten Ordner erstellt. Gmail wird getrennt; alte Mailaufträge werden nicht erneut ausgeführt.")
+                    .setNegativeButton("Abbrechen",null).setPositiveButton("Ersetzen & wiederherstellen",(d,w) -> backupWork(backup)).show();}
+                catch(Exception e) {error("Sicherung konnte nicht geprüft werden.");}
+            });
+        },"backup-inspect").start();
     }
     private void mailMenu() {
         if(!requireAdmin()) return;
@@ -663,6 +718,15 @@ public class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);
+        if(request==BACKUP_FOLDER || request==BACKUP_RESTORE) {
+            pickerOpen=false;
+            if(!adminUnlocked) {notice="Einstellungen gesperrt · Vorgang abgebrochen";render();return;}
+            if(result!=RESULT_OK || data==null || data.getData()==null) {notice="Vorgang abgebrochen · keine Änderung";render();return;}
+            if(request==BACKUP_FOLDER) {
+                try {Backup.configure(this,data.getData(),data.getFlags());notice="Sicherungsordner gewählt";render();} catch(Exception e) {error(e.getMessage());}
+            } else inspectBackup(data.getData());
+            return;
+        }
         if(request==MAIL_AUTH) {
             pickerOpen=false;
             if(!adminUnlocked || result!=RESULT_OK || data==null) {notice="Gmail-Verbindung abgebrochen. Einstellungen ggf. erneut entsperren.";render();return;}

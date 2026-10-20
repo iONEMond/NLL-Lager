@@ -25,13 +25,15 @@ public final class Store extends SQLiteOpenHelper {
         public final String code, name, location;
         Person(String code, String name, String location) { this.code = code; this.name = name; this.location=location; }
     }
-    public Store(Context context) { super(context, "nll-lager.db", null, 5); }
+    private final Context app;
+    public Store(Context context) { super(context, "nll-lager.db", null, 6);app=context.getApplicationContext(); }
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE materials (code TEXT PRIMARY KEY, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE people (code TEXT PRIMARY KEY, name TEXT NOT NULL, location TEXT NOT NULL DEFAULT '')");
         db.execSQL("CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL, code TEXT NOT NULL, number TEXT NOT NULL, description TEXT NOT NULL, type TEXT NOT NULL, unit TEXT NOT NULL, from_location TEXT NOT NULL, to_location TEXT NOT NULL, quantity TEXT NOT NULL, person_code TEXT NOT NULL, person_name TEXT NOT NULL, archived_batch TEXT)");
         db.execSQL("CREATE INDEX movements_pending ON movements(archived_batch, id)");
         createMailTables(db);
+        db.execSQL("CREATE TABLE app_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)");
         db.execSQL("ALTER TABLE movements ADD COLUMN movement_kind TEXT NOT NULL DEFAULT ''");
     }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -41,6 +43,7 @@ public final class Store extends SQLiteOpenHelper {
         }
         if(oldVersion<3) createMailTables(db);
         else if(oldVersion<4) db.execSQL("ALTER TABLE mail_commands ADD COLUMN auto_archive INTEGER NOT NULL DEFAULT 0");
+        if(oldVersion<6) db.execSQL("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)");
         if(oldVersion<5) db.execSQL("ALTER TABLE movements ADD COLUMN movement_kind TEXT NOT NULL DEFAULT ''");
     }
     private static void createMailTables(SQLiteDatabase db) {
@@ -55,7 +58,7 @@ public final class Store extends SQLiteOpenHelper {
     public void addPerson(String code, String name, String location) {
         ContentValues v = new ContentValues();
         v.put("code", Rules.required(code, "Personencode")); v.put("name", Rules.required(name, "Name")); v.put("location",optionalLocation(location));
-        getWritableDatabase().insertOrThrow("people", null, v);
+        getWritableDatabase().insertOrThrow("people", null, v);Backup.request(app);
     }
     public Material material(String code) {
         try (Cursor c = getReadableDatabase().rawQuery("SELECT code,number,description,type,unit,location FROM materials WHERE code=?", new String[]{code})) {
@@ -76,12 +79,13 @@ public final class Store extends SQLiteOpenHelper {
         v.put("code", Rules.required(code, "Scancode")); v.put("number", Rules.required(number, "Materialnummer"));
         v.put("description", Rules.required(description, "Beschreibung"));
         v.put("type", Rules.required(type, "Art")); v.put("unit", Rules.required(unit, "Einheit")); v.put("location",optionalLocation(location));
-        getWritableDatabase().insertOrThrow("materials", null, v);
+        getWritableDatabase().insertOrThrow("materials", null, v);Backup.request(app);
     }
     private String optionalLocation(String location) { return location==null || location.trim().isEmpty() ? "" : Rules.required(location,"Lagernummer"); }
     public void assignLocation(String code,String location,boolean people) {
         ContentValues values=new ContentValues(); values.put("location",Rules.required(location,"Lagernummer"));
         if(getWritableDatabase().update(people ? "people" : "materials",values,"code=?",new String[]{code})!=1) throw new IllegalArgumentException("Eintrag nicht gefunden.");
+        Backup.request(app);
     }
     public List<Person> people() {
         List<Person> result=new ArrayList<>();
@@ -109,7 +113,7 @@ public final class Store extends SQLiteOpenHelper {
         v.put("type", material.type); v.put("unit", material.unit);v.put("movement_kind",kind);
         v.put("from_location", from); v.put("to_location", to); v.put("quantity", Rules.quantity(quantity));
         v.put("person_code", person.code); v.put("person_name", person.name);
-        return getWritableDatabase().insertOrThrow("movements", null, v);
+        long id=getWritableDatabase().insertOrThrow("movements", null, v);Backup.request(app);return id;
     }
     public void importRows(List<String[]> rows, boolean people) {
         SQLiteDatabase db = getWritableDatabase();
@@ -180,6 +184,6 @@ public final class Store extends SQLiteOpenHelper {
     /** Called only after the output stream has successfully closed. Catalogs and people remain intact. */
     public int archive(long cutoff, String batch) {
         ContentValues v = new ContentValues(); v.put("archived_batch", batch);
-        return getWritableDatabase().update("movements", v, "id<=? AND archived_batch IS NULL", new String[]{Long.toString(cutoff)});
+        int count=getWritableDatabase().update("movements", v, "id<=? AND archived_batch IS NULL", new String[]{Long.toString(cutoff)});Backup.request(app);return count;
     }
 }

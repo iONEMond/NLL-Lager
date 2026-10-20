@@ -10,6 +10,8 @@ Exportlayout für Materialwirtschaft: Code, Beschreibung, Menge, Bewegungsart, M
 
 Neue Pflichtauswahl bei Buchung: Entnahme, Rückgabe oder Umlagerung. Dauerhaft mit der Bewegung gespeichert; ältere Bewegungen behalten eine leere Bewegungsart. Migration auf Datenbankversion 5 erhält offene und archivierte Bewegungen. Gesamtstand: 70 Tests, Debug-Build und Lint erfolgreich.
 
+Vollständige Geschäftsdaten-Sicherung im gewählten Dokumentenordner: Materialien, Personen, Lageroptionen, offene und archivierte Bewegungen mit Buchungssnapshots. Hintergrundsicherung nach Änderungen und beim App-Start; manuelle Sicherung, Prüfsumme, Rückleseprüfung, sieben Sicherungsstände. Wiederherstellung nach Dateiprüfung und Bestätigung, zwingender Sicherheitskopie des aktuellen Stands und transaktionalem Ersatz. Lageroptionen liegen ab Datenbankversion 6 in derselben Datenbank; vorhandene Einstellungen bleiben lesbar. Keine Passwörter, Google-Tokens oder Mailwarteschlangen in Sicherungen. Wiederherstellung trennt Gmail und setzt den Abrufbeginn neu, um alte Aufträge nicht erneut auszuführen. 82 Tests, Debug-Build und Lint erfolgreich; echter Ordnerzugriff auf dem Honeywell noch offen. [Anleitung](SICHERUNG.md).
+
 Entwicklungsstand 0.6.1-dev, versionCode 9. Noch kein neuer Release; veröffentlichte APK bleibt 0.6.0. 67 Tests, Debug-Build und Lint erfolgreich. Prüfung mit nachgebildeten Beispieldateien; Originaldatei liegt bisher nur als Foto vor.
 
 ## 0.6.0 – 19.10.2026 · erster Gerätetest

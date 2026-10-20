@@ -28,7 +28,7 @@ final class MailSync {
             MailConfig.status(context,"Synchronisierung abgeschlossen. Auftragsstatus unten prüfen.");return true;
         } catch(Exception e) {
             MailConfig.status(context,e instanceof IOException ? e.getMessage() : "Gmail-Verbindung fehlgeschlagen. Internet, Google-Einrichtung und Kontofreigabe prüfen.");return false;
-        } finally {BUSY.set(false);}
+        } finally {BUSY.set(false);Backup.request(context);}
     }
     static void sync(Context context,MailConfig config,Store store,GmailClient client) throws Exception {
         MailStore mail=new MailStore(store);mail.finishAutomaticArchives();sendPending(context,config,mail,client);

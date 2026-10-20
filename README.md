@@ -6,7 +6,7 @@ Offline-App für den Honeywell EDA52-0: Material- und Kältemittelbewegungen sca
 
 **Release 0.6.0 – erster Gerätetest.** [Gmail-Einrichtung und Ablauf](GMAIL-EINRICHTUNG.md). Google-Anmeldung, Excel-Mailversand und Material-Mailimport mit Firmensignatur im Emulator geprüft. Honeywell-Hardwaretest und echte Prüfung der neuen Export-/Neuanlageabläufe stehen noch aus.
 
-**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`, neues Ausgabeformat und Bewegungsart-Auswahl. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
+**In Entwicklung: 0.6.1-dev** – Import der Firmen-Materialliste mit `Title` und `Code`, neues Ausgabeformat, Bewegungsart-Auswahl und vollständige Gerätesicherung. Noch nicht in der veröffentlichten APK 0.6.0 enthalten.
 
 ## Download
 
@@ -61,6 +61,10 @@ In der veröffentlichten 0.5.0 bleiben SQLite-Daten lokal und die App hat keine 
 
 Materiallager ist eine Stammdatenzuordnung. Es gibt weiterhin keine Bestandsberechnung, Werkzeuge oder Nachbestellungen. Kältemittel verwenden eine Menge mit Einheit; getrennte Flaschen-/kg-Erfassung ist noch nicht umgesetzt.
 
+## Vollständige Sicherung (ab 0.6.1-dev)
+
+Unter **Schloss → Sicherung & Wiederherstellung** einmal einen lokalen Dokumentenordner auswählen. Danach **Jetzt sichern** wählen und den Erfolgsstatus prüfen. Weitere Sicherungen werden nach Änderungen und beim App-Start automatisch eingeplant, sobald Android die Hintergrundarbeit zulässt. Sieben geprüfte Stände bleiben erhalten. [Einrichtung und Wiederherstellung](SICHERUNG.md). Die Sicherung enthält Material, Personen, Lager, offene Bewegungen und Archiv; keine Passwörter oder Google-Zugriffsdaten. Noch nicht im veröffentlichten Release 0.6.0 enthalten.
+
 ## Entwicklung
 
 Java 17 oder 21, Android SDK Platform 35 und Build Tools 35.0.0. Gradle 8.13 / AGP 8.9.2. Mindestens Android 8.0 (API 26), Ziel-API 35.
@@ -71,6 +75,6 @@ export ANDROID_HOME=/pfad/zum/android-sdk
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 5 ergänzt die gespeicherte Bewegungsart; Migration von Version 1/2/3/4 erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
+APK: `app/build/outputs/apk/debug/app-debug.apk`. Datenbankversion 6 ergänzt transaktional gesicherte Lageroptionen; Migration von Version 1/2/3/4/5 erhält bestehende Bewegungen und Stammdaten. Lokale Tests nutzen Robolectric mit Android 11. Stand der Prüfung: [VALIDIERUNG.md](VALIDIERUNG.md).
 
 Geräte-Instrumentierung (`:app:connectedDebugAndroidTest`) löscht App-Testdaten und darf nur auf einer separaten Testinstallation ausgeführt werden. Cloud-Setup bleibt unter `tools/setup-cloud.sh` und `tools/check-cloud.sh` verfügbar.

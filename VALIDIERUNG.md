@@ -1,3 +1,7 @@
+# Vollständige Sicherung – 0.6.1-dev
+
+20.10.2026: 82 Tests, Debug-Build und Lint erfolgreich. Elf neue Sicherungstests prüfen vollständigen Roundtrip mit offenen/archivierten Buchungen, Lagerzuordnung und Bewegungsart; Prüfsumme, Formatversion und doppelte Codes; Dateianbieter mit echtem Datei-I/O, sieben Stände, unveränderte Fremddateien; Schreib-/Umbenennungsfehler, beschädigtes Rücklesen und gelöschte letzte Sicherung; Sicherheitskopie vor Wiederherstellung, Gmail-Trennung und blockierte Wiederherstellung bei laufender Mailverarbeitung; Transaktionsrollback einschließlich Lageroptionen; Migration 5→6 sowie Wiederherstellung nach simulierter Löschung der App-Daten bei erhaltenem Dokument. Ein zusätzlicher UI-Test prüft Menü-/Ergebnisschutz und Abbruch ohne Datenänderung. Der Test-Dateianbieter simuliert Androids Dokumentenzugriff; echte Ordnerfreigabe und Neuinstallation auf dem Honeywell stehen noch aus. Entwicklungsbuild, noch kein neuer Release.
+
 # Ausgabeformat und Bewegungsart – 0.6.1-dev
 
 20.10.2026: Acht-Spalten-Export für XLSX, CSV, Mail und Archiv. 70 Tests, Debug-Build und Lint erfolgreich. Zusätzliche Tests prüfen genaue Kopfzeilen/Reihenfolge, Textcode mit führenden Nullen, numerische Menge, Excel-Datum, gespeicherte Bewegungsart, Mitarbeitername, kombinierten Lagerort, leere letzte Spalte und Filterbereich A:H. UI-Test prüft Pflichtauswahl und gespeicherte Entnahme. Migration 4→5 erhält Archiv und lässt historische Bewegungsarten leer. Noch nicht veröffentlicht; installierte Release-APK bleibt 0.6.0.
