@@ -1,5 +1,7 @@
 # Release-Vorbereitung 0.6.1 – 20.10.2026
 
+About-Menü nachträglich ergänzt: Version/Build aus PackageInfo, Ausgabe, Android-/API- und Datenbankversion sowie Betriebs-/Projekthinweise. Auch dieser Bildschirm ist als Admin-Bildschirm geschützt und verwendet die bestehende Zurück-/Sperrlogik. Nach der Ergänzung erneut alle 97 vorhandenen Tests, assembleRelease und lintRelease erfolgreich. Noch keine visuelle Geräteprüfung dieses Menüs; Release weiterhin unsigniert.
+
 Versionsname 0.6.1, versionCode 10, Paket de.nll.lager. Erneut 97 Tests ohne Fehler oder übersprungene Tests, assembleRelease und lintRelease erfolgreich. Metadaten der erstellten app-release-unsigned.apk mit aapt geprüft. APK ist unsigniert und nicht als installierbares Update veröffentlicht. Bestehender Schlüssel vorhanden; Android Studio benötigt die nicht gespeicherten Schlüsselpasswörter erneut. Signaturprüfung und Veröffentlichung folgen erst nach Signierung. Honeywell-Tests der neuen Funktionen weiterhin offen. downloads/SHA256SUMS bleibt bis zum signierten Release unverändert.
 
 # Geräterückmeldung zu 0.5.0 – 20.10.2026

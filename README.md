@@ -20,6 +20,8 @@ Der private Signierschlüssel und Passwörter bleiben lokal und gehören nicht i
 
 ## Bedienung
 
+Unter **Einstellungen → Über die App (About)** stehen die tatsächlich installierte Version und Buildnummer, Ausgabe (Haupt-App/Vorschau), Paketname, Android-/API-Version und Datenbankversion sowie Hinweise zu Datenhaltung, Sicherung, Mail, Updates und Projektanleitungen. Ab 0.6.1, noch nicht veröffentlicht.
+
 1. Scanner als Tastatureingabe mit Enter konfigurieren. Das jeweilige Codefeld muss fokussiert sein.
 2. Schloss oben rechts öffnen. Beim ersten Mal eigenes Passwort mit mindestens 8 Zeichen samt Wiederholung festlegen.
 3. Unter **Lageroptionen verwalten** die allgemeinen Lager einrichten. Personen und Materialien manuell anlegen oder aus Excel importieren.

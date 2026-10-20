@@ -4,6 +4,8 @@ Neueste veröffentlichte APK: **0.6.0**. Geplante Funktionen sind ausdrücklich 
 
 ## 0.6.1 – Release vorbereitet, nicht veröffentlicht
 
+„Über die App (About)“ im geschützten Einstellungsmenü ergänzt: installierte Version und Buildnummer direkt aus den Android-Paketdaten, Haupt-App/Vorschau, Paketname, Android-/API-Version, Datenbankversion sowie Hinweise zu Offline-Betrieb, Speicherung, Sicherung, Gmail, Updates und Projektanleitungen. Zurück-Pfeil und automatische Einstellungssperre gelten auch hier. Teil des noch nicht signierten Release-Kandidaten 0.6.1.
+
 20.10.2026: Release-Kandidat 0.6.1 mit versionCode 10 vorbereitet (höher als Entwicklungsstand 9). Signierung mit bestehendem Release-Schlüssel steht aus: Android Studio benötigt die nicht gespeicherten Schlüsselpasswörter erneut. Keine signierte 0.6.1 zum Download veröffentlicht; aktuell bleibt 0.6.0 der neueste Release.
 
 Release-Vorprüfung: erneut 97 Tests ohne Fehler, Release-Build und Release-Lint erfolgreich. Paket-/Versionsmetadaten der unsignierten APK geprüft. Prüfsummen und Download werden erst mit der signierten APK ergänzt.

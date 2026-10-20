@@ -169,6 +169,7 @@ public class MainActivity extends Activity {
             case "mail": mailMenu(); break;
             case "backup": backupMenu(); break;
             case "updates": updateMenu(); break;
+            case "about": aboutMenu(); break;
             case "locations": locationMenu(); break;
             case "home": home(); break;
             case "browse": browse(); break;
@@ -197,7 +198,7 @@ public class MainActivity extends Activity {
         } catch (IllegalArgumentException e) { error(e.getMessage()); }
     }
     private boolean isAdminScreen() {
-        return java.util.Arrays.asList("settings","locations","materials","people","history","archive","mail","backup","updates").contains(screen);
+        return java.util.Arrays.asList("settings","locations","materials","people","history","archive","mail","backup","updates","about").contains(screen);
     }
     private boolean requireAdmin() {
         if(adminUnlocked) return true;
@@ -246,8 +247,31 @@ public class MainActivity extends Activity {
         button("Mail & Synchronisierung",false,() -> {screen="mail";render();});
         button("Sicherung & Wiederherstellung",false,() -> {screen="backup";render();});
         button("App aktualisieren",false,() -> {screen="updates";render();});
+        button("Über die App (About)",false,() -> {screen="about";render();});
         button("Passwort ändern",false,() -> passwordDialog(true));
         button("Einstellungen sperren",false,this::lockSettings);
+    }
+    private void aboutMenu() {
+        if(!requireAdmin()) return;
+        base("Über die App", "NLL Lager · Material- und Kältemittelbewegungen");
+        String version="unbekannt", build="unbekannt";
+        try {
+            android.content.pm.PackageInfo current=AppUpdate.installed(this);
+            version=current.versionName;
+            build=String.valueOf(AppUpdate.code(current));
+        } catch(Exception ignored) {}
+        text("Version: "+version+" · Build: "+build,22,INK);
+        text(AppUpdate.PACKAGE.equals(getPackageName()) ? "Ausgabe: Haupt-App" : "Ausgabe: Vorschau · separate App-Daten",17,INK);
+        text("Paket: "+getPackageName(),16,MUTED);
+        text("Android: "+android.os.Build.VERSION.RELEASE+" · API "+android.os.Build.VERSION.SDK_INT,16,MUTED);
+        text("Datenbankversion: "+store.getReadableDatabase().getVersion(),16,MUTED);
+        text("Betrieb & Daten",20,INK);
+        text("Buchungen und Listen werden offline in der lokalen App-Datenbank gespeichert. Eine Deinstallation oder das Löschen der App-Daten entfernt diese Daten. Sicherungen im selbst gewählten Dokumentenordner können unabhängig von der Installation erhalten bleiben. Sicherungsordner unter „Sicherung & Wiederherstellung“ einrichten.",16,MUTED);
+        text("Mail & Updates",20,INK);
+        text("Die optionale Gmail-Anbindung überträgt Listen und Berichte. Buchungen funktionieren auch ohne Internet. App-Updates stammen aus stabilen GitHub-Releases; vor der Installation werden Signatur und Version geprüft und eine Sicherung erstellt.",16,MUTED);
+        text("Projekt & Versionshistorie",20,INK);
+        text("github.com/"+AppUpdate.REPO+"\nVersionshistorie: CHANGELOG.md\nAnleitungen: SICHERUNG.md · UPDATES.md · GMAIL-EINRICHTUNG.md",16,MUTED);
+        text("Für Support bitte Version, Build, Android-Version und eine Beschreibung des Problems angeben. Keine Passwörter oder Schlüssel weitergeben.",16,MUTED);
     }
     private void updateMenu() {
         if(!requireAdmin()) return;
