@@ -15,14 +15,14 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.5.0, Code 6 | Signierter Release; Betreiber meldete am 20.10.2026 erfolgreichen Gerätetest. Keine einzelnen Prüfschritte genannt. |
 | 0.6.0, Code 8 | Vorheriger GitHub-Release `v0.6.0`. Gmail und weitere Bedienabläufe. Noch keine umfassende Honeywell-Bestätigung. |
 | 0.6.1-dev, Code 9 | Früherer lokaler Entwicklungsstand, keine stabile Veröffentlichung. |
-| 0.6.1, Code 10 | Letzter veröffentlichter Quellstand, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
+| 0.6.1, Code 10 | Vorheriger Release, **signiert, geprüft und als v0.6.1 veröffentlicht**. Enthält Firmenimport, neuen Export, Bewegungsart, Sicherung, Updater und About. |
 | 0.6.2-dev, Code 11 | Unveröffentlichter Zwischenstand, jetzt in 0.7.0 übernommen. |
 | 0.7.0-dev, Code 12 | Früherer lokaler Entwicklungsstand. |
-| 0.7.0, Code 13 | Mit bestehendem Zertifikat signiert und geprüft; Veröffentlichung noch ausstehend. |
+| 0.7.0, Code 13 | Neuester stabiler Release v0.7.0; signiert, veröffentlicht und öffentlicher Download geprüft. |
 
 Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
 
-Letzter funktionaler Prüfstand: 124 lokale Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich für 0.7.0-dev. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
+Letzter funktionaler Prüfstand: 124 lokale Tests, Debug-/Release-Build und beide Lint-Prüfungen erfolgreich; Releaseprüfung für 0.7.0 (13) erneut erfolgreich. Keine visuelle Geräteprüfung des About-Menüs. Detaillierter Verlauf und historische Testzahlen: [VALIDIERUNG.md](docs/VALIDIERUNG.md). Dokumentationsumstrukturierung ist kein weiterer Geräte- oder Funktionstest.
 
 ## Arbeitsverzeichnis und GitHub
 
@@ -71,7 +71,7 @@ Gradle 8.13, AGP 8.9.2, Java-Sprachziel 17, JDK 21 lokal, API 26–35. `com.goog
 
 Sync-Einrichtung bei `config.ready()` zunächst eingeklappt, über Verbindung bearbeiten erweiterbar. Fehlende Verbindung zeigt wieder Setup/Google-Autorisierung. Personen/Material haben im Lagerzuordnungsdialog eine Löschaktion mit erneuter Adminprüfung und Schutz vor gleichzeitiger Mailverarbeitung. `Store.deleteEntry` löscht ausschließlich Stammdaten; historische Snapshots bleiben unverändert. Bei Löschung aktiver Person/Artikel entfernt die UI deren aktuelle Zuordnung.
 
-## Ergänzte Funktionen in 0.7.0-dev
+## Ergänzte Funktionen in 0.7.0
 
 - `Store.updatePerson/updateMaterial` bearbeitet auch Primärcodes. Kollisionen werden vom eindeutigen Schlüssel abgewiesen; frühere Buchungen behalten Snapshots. UI verwirft/aktualisiert betroffene aktive Auswahl, sperrt parallele Mailverarbeitung und prüft Freigabe erneut.
 - `Store.cancelMovement` erzeugt eine neue offene Gegenbuchung, verändert das Original nicht. Menge bleibt positiv, Lager werden vertauscht, Bewegungsart ist Storno. `reversal_of` (eindeutiger Index) verweist auf Original; `cancellation_reason` und `cancelled_by` dokumentieren Grund/Akteur. Bei nicht angemeldeter Person Akteur „Administration“. Keine individuelle starke Authentisierung behaupten. Storno eines Stornos und zweites Storno desselben Originals sind gesperrt. Auch für archivierte/versandte Originale wird nur eine neue offene Gegenbuchung erzeugt; gespeicherte Mailberichte bleiben unverändert. Acht Exportspalten unverändert, neue Stornozeilen müssen von Materialwirtschaft berücksichtigt werden.
@@ -154,7 +154,7 @@ Zwei Emulatoren waren vorhanden: „Medium Phone API 37.0“ mit älteren Instal
 
 ## Nächste Aufgaben und bekannte Grenzen
 
-1. Veröffentlichung 0.6.1 abgeschlossen: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1. APK und SHA256SUMS hochgeladen; anonymer Download und vollständige Signaturprüfung erfolgreich. APK lokal unter downloads/NLL-Lager-0.6.1-release.apk und im übergeordneten Projektordner; SHA-256 a6d6adafeb98fa023a5b0ad9e1a24989b5f85d613aabcee89bb7d4f26cd85b31, Größe 2.423.836 Bytes. Nächster Schritt ist der Honeywell-Test. 0.7.0-dev ist zusätzlich lokal/GitHub vorbereitet, einschließlich aller Änderungen aus 0.6.2-dev; ein späterer stabiler Release benötigt einen versionCode höher als 12 sowie erneute Signierung.
+1. Veröffentlichung 0.7.0 abgeschlossen: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.0. APK und SHA256SUMS hochgeladen; anonymer Download und Signatur geprüft. APK lokal unter downloads/NLL-Lager-0.7.0-release.apk und im übergeordneten Projektordner. SHA-256 1f85c71d34653bff723e1bcf26b1b9b7dccaf17063f1c5d1f9d71c0d972f35eb, Größe 2.438.752 Bytes. Nächster Schritt: Honeywell-Test. Neue Sicherungen verwenden Format 2, alte Format-1-Sicherungen bleiben lesbar; kein Downgrade auf 0.6.1 mit neuen Sicherungen.
 2. Auf Honeywell Update von 0.5.0 mit Datenerhalt, Scanner-Eingabe, Passwortschutz und unbekannte Artikel testen.
 3. Echte Firmen-XLSX statt Foto prüfen; neues Berichtslayout und Pflichtbewegungsart mit Betreiber bestätigen.
 4. Sicherungsordner, Wiederherstellung, Android-Installationsfreigabe und späteres In-App-Update auf echter Hardware testen.

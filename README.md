@@ -8,16 +8,14 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | --- | --- |
 | **0.5.0** | Vom Betreiber auf dem Gerät erfolgreich getestet |
 | **0.6.0 · Build 8** | Vorheriger Release; ergänzt Gmail |
-| **0.6.1 · Build 10** | **Neuester veröffentlichter Release** |
-| **0.7.0 · Build 13** | Release vorbereitet, noch nicht veröffentlicht |
+| **0.6.1 · Build 10** | Vorheriger Release |
+| **0.7.0 · Build 13** | **Neuester veröffentlichter Release** |
 
-[Release 0.6.1](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1) ergänzt Firmenlisten-Import, das neue Exportformat, Bewegungsarten, vollständige Sicherung/Wiederherstellung, GitHub-Updates und ein About-Menü. Lokale Prüfungen: 97 Tests, Release-Build und Release-Lint erfolgreich. Tests der neuen Abläufe auf dem Honeywell stehen aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
-
-**In Entwicklung für 0.7.0:** Alle Änderungen aus 0.6.2-dev sowie vollständige Stammdatenbearbeitung, nachvollziehbare Stornos und neue Buchung, Doppelscan-Schutz, detaillierte Importvorschau und sichtbarer Sicherungsstatus. 124 lokale Tests sowie Debug-/Release-Build und Lint erfolgreich. Noch nicht in der unten angebotenen APK enthalten.
+[Release 0.7.0](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.0) ergänzt vollständige Stammdatenbearbeitung, nachvollziehbare Stornos, Doppelscan-Warnung, detaillierte Importvorschau, optionale Importspalten, vierstellige PIN, Fortschrittsanzeigen und Sicherungsstatus. 124 lokale Tests, Release-Build und Lint erfolgreich; öffentlicher Download und Signatur geprüft. Hardwaretest der neuen Abläufe steht aus. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 
 ## Installation
 
-**[Signierte APK 0.6.1 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.6.1/NLL-Lager-0.6.1-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.6.1) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
+**[Signierte APK 0.7.0 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.7.0/NLL-Lager-0.7.0-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.0) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
 
 Die Haupt-App verwendet `de.nll.lager`. Ein Update von der signierten 0.5.0 erhält die App-Daten; die App dazu nicht deinstallieren. Die Vorschau verwendet `de.nll.lager.preview` mit eigenen Daten. Alte Installationen mit einem anderen Signierschlüssel lassen sich nicht direkt aktualisieren.
 
