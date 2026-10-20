@@ -10,14 +10,14 @@ Android-App für die Erfassung von Material- und Kältemittelbewegungen auf eine
 | **0.6.0 · Build 8** | Vorheriger Release; ergänzt Gmail |
 | **0.6.1 · Build 10** | Vorheriger Release |
 | **0.7.0 · Build 13** | Wegen Mailproblemen zurückgezogen; Download entfernt |
-| **0.7.1 · Build 15** | **Neuester veröffentlichter Release** |
-| 0.7.2 · Build 17 | Release vorbereitet: lokale Exportaufträge ohne Posteingangs-Zeitfilter, konkrete Fehlermeldung |
+| 0.7.1 · Build 15 | Vorheriger Release |
+| **0.7.2 · Build 17** | **Neuester veröffentlichter Release** |
 
-[Release 0.7.1](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.1) ergänzt Abbruch und Zeitlimit für Mailvorgänge, aktuelle Hintergrundanzeige und Excel über die Android-Mail-App teilen. 140 lokale Tests, Release-Build und Lint erfolgreich; öffentlicher Download und Signatur geprüft. Geräte-/Mailtest der Korrektur steht aus. 0.7.0 wegen gemeldeter Mailprobleme nicht weiter installieren. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
+[Release 0.7.2](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.2) korrigiert still übersprungene lokale Exportaufträge und zeigt Vorbereitungsfehler konkret an. 147 lokale Tests und zwei gezielte Android-Emulatortests erfolgreich; der Mailversand war in diesen Tests simuliert. Release-Build, Lint, öffentlicher Download und Signatur geprüft. Echter Mailtest der Korrektur auf dem Scanner bleibt offen. 0.7.0 wurde wegen Mailproblemen zurückgezogen. Details: [Versionshistorie](CHANGELOG.md) und [Prüfprotokoll](docs/VALIDIERUNG.md).
 
 ## Installation
 
-**[Signierte APK 0.7.1 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.7.1/NLL-Lager-0.7.1-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.1) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
+**[Signierte APK 0.7.2 herunterladen](https://github.com/iONEMond/NLL-Lager/releases/download/v0.7.2/NLL-Lager-0.7.2-release.apk)** · [Releasehinweise](https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.2) · [SHA-256-Prüfsummen](downloads/SHA256SUMS)
 
 Die Haupt-App verwendet `de.nll.lager`. Ein Update von der signierten 0.5.0 erhält die App-Daten; die App dazu nicht deinstallieren. Die Vorschau verwendet `de.nll.lager.preview` mit eigenen Daten. Alte Installationen mit einem anderen Signierschlüssel lassen sich nicht direkt aktualisieren.
 

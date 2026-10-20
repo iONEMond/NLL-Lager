@@ -20,7 +20,8 @@ Der Scanner nutzt Intune für das Arbeitsprofil. Die App wird im privaten Profil
 | 0.7.0-dev, Code 12 | Früherer lokaler Entwicklungsstand. |
 | 0.7.1-dev, Code 14 | Unveröffentlichte Weiterentwicklung: Abbruch und zusätzliche Android-Teilen-Option. |
 | 0.7.0, Code 13 | Zurückgezogen: Release und Download wegen Mailproblemen gelöscht; Quelltag bleibt erhalten. |
-| 0.7.1, Code 15 | Neuester stabiler Release, signiert und öffentlich geprüft. |
+| 0.7.1, Code 15 | Vorheriger Release, signiert und öffentlich geprüft. |
+| 0.7.2, Code 17 | Neuester stabiler Release, signiert und öffentlich geprüft. |
 
 Die Rückmeldung „0.5 funktioniert“ gilt nur für 0.5.0. Nicht die veröffentlichte 0.6.0 mit der tatsächlich vom Betreiber installierten Version verwechseln. Die Signierung von 0.6.0 erfolgte nach damaliger lokaler Passworteingabe des Betreibers, nicht ohne Passwort. Am 20.10.2026 hat der Betreiber die Passwörter erneut direkt in Android Studio eingegeben. 0.6.1 wurde damit signiert und mit dem bestehenden Zertifikat geprüft. Veröffentlichung als stabiler Release v0.6.1 über Safari abgeschlossen; anonyme API-/Download- und Signaturprüfung erfolgreich. Passwörter weiterhin unbekannt und nicht gespeichert.
 
@@ -205,3 +206,5 @@ Release-Vorbereitung 0.7.2: Betreiber hat Signierung und Veröffentlichung mit �
 Wichtige aktuelle Betreiberpräferenz: „lass remember pass drin!“ – Android Studio Remember passwords ausdrücklich aktiviert lassen. Am 20.10.2026 im Signierdialog aktiviert vorgefunden und bewusst beibehalten. Passwörter weiterhin nicht im Chat erfragen, auslesen oder ins Repository schreiben. Frühere Hinweise auf deaktiviertes Remember passwords sind historisch und nicht mehr aktuelle Präferenz.
 
 0.7.2 (Code 17) signiert und mit bestehendem Release-Zertifikat geprüft: Paket de.nll.lager, API 26+, Größe 2.444.984 Bytes, SHA-256 efe8fd15c8394411ed55fdea25bd57df5f81921c34dde924ce3631fef14cabf2. APK im downloads-Ordner und übergeordneten Projektordner. Veröffentlichung noch ausstehend.
+
+0.7.2 als stabiler Release v0.7.2 veröffentlicht: https://github.com/iONEMond/NLL-Lager/releases/tag/v0.7.2. Latest-API bestätigt v0.7.2, draft=false, prerelease=false. Öffentlicher Download identisch mit signierter APK (2.444.984 Bytes, SHA-256 efe8fd15c8394411ed55fdea25bd57df5f81921c34dde924ce3631fef14cabf2), apksigner erneut erfolgreich. SHA256SUMS 751 Bytes, SHA-256 74da44789d7026d06f229c5f620047fcdb5d7ea66caaff46e8d4ec723858a1e9. Nächster Schritt: echter Export am Scanner, neuen Auftrag/Status und Firmenempfang bestätigen. Tests bisher mit simuliertem Versand; konkrete Scannerursache nicht bewiesen. Remember passwords auf ausdrücklichen Betreiberwunsch aktiviert lassen.
