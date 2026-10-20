@@ -116,3 +116,9 @@ Auf Betreiberwunsch am 20.10.2026 im vorhandenen Emulator NLL_Gmail_Test (emulat
 Geprüft: lokaler Auftrag trotz Zukunfts-Abrufgrenze gespeichert und mit XLSX verarbeitet, bestätigte Snapshot-Archivierung ohne spätere Buchung, separater zweiter Export und getrennte Verarbeitung; echte Eingangsmail vor Abrufgrenze unverändert übersprungen. Versand durch AcceptedClient simuliert, keine Google-Anmeldung, kein echtes Senden, kein Nachweis der Firmenpostfach-Zustellung oder konkreten Scannerursache. Erster Instrumentierungslauf scheiterte am Testaufbau (nicht beschreibbarer Kontext der Test-APK), danach auf beschreibbaren isolierten Präfix-Kontext umgestellt und erfolgreich erneut ausgeführt.
 
 Abschließend gesamte lokale Suite einschließlich der beiden neuen Gerätetestfälle unter Robolectric erneut ausgeführt: 147 Tests ohne Fehler/übersprungene Tests, lintDebug erfolgreich. Release-Build/-Lint vom unveränderten App-Quellstand der vorigen 145-Test-Prüfung; seitdem nur Tests/Dokumentation ergänzt.
+
+## Release-Vorprüfung 0.7.2 (Code 17)
+
+147 lokale Tests ohne Fehler/übersprungene Tests, Release-Build und Release-Lint erneut erfolgreich. Noch keine neue signierte APK; Betreiber-Eingabe im vorbereiteten Android-Studio-Dialog ausstehend. Die zwei vorherigen Android-Instrumentierungstests wurden mit dem Entwicklungsstand 0.7.2-dev (Code 16) und simuliertem Versand ausgeführt, nicht als neuer echter Mailtest wiederholt.
+
+Signierte 0.7.2 (17): apksigner mit bestehendem Release-Zertifikat erfolgreich, Paket/Version/API geprüft. 2.444.984 Bytes, SHA-256 efe8fd15c8394411ed55fdea25bd57df5f81921c34dde924ce3631fef14cabf2. Veröffentlichung noch ausstehend. Betreiber hat Speicherung der Schlüsselpasswörter in Android Studio ausdrücklich angefordert; Remember passwords aktiviert belassen.
